@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 // In a real app this would point to the deployed server or local IP if running on device
-const BASE_URL = 'http://10.0.2.2:4000/api/v1'; // Default for Android Emulator to host localhost
+const BASE_URL = 'https://api.goone.tech/api/v1';
 
 export const apiClient = axios.create({
   baseURL: BASE_URL,

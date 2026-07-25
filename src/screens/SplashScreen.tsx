@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text, StyleSheet, Animated, Image } from 'react-native';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
 
@@ -36,10 +36,8 @@ export const SplashScreen: React.FC<any> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }] }}>
-        <View style={styles.logoBox}>
-          <Text style={styles.logoText}>GO</Text>
-        </View>
+      <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: scaleAnim }], alignItems: 'center' }}>
+        <Image source={require('../Logo.png')} style={{ width: 120, height: 120, resizeMode: 'contain' }} />
         <Text style={styles.brandName}>GoOne</Text>
         <Text style={styles.tagline}>Everything local, delivered fast.</Text>
       </Animated.View>
