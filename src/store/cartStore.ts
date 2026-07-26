@@ -1,61 +1,39 @@
+/**
+ * GoOne Customer App — Cart Store
+ */
 import { create } from 'zustand';
-
-export interface CartItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  businessId: string;
-}
-
+interface CartItem { id: string; name: string; price: number; qty: number; businessId: string; businessName: string; unit?: string; }
 interface CartState {
   items: CartItem[];
   businessId: string | null;
+  businessName: string;
+  itemCount: number;
+  total: number;
   addItem: (item: CartItem) => void;
-  removeItem: (id: string) => void;
-  updateQuantity: (id: string, delta: number) => void;
+  updateQty: (id: string, delta: number) => void;
   clearCart: () => void;
-  getTotal: () => number;
 }
-
 export const useCartStore = create<CartState>((set, get) => ({
-  items: [],
-  businessId: null,
-
-  addItem: (item) => set((state) => {
-    // Prevent ordering from multiple businesses at once
-    if (state.businessId && state.businessId !== item.businessId) {
-      // For now, we'll just return state (could throw an error or show a toast)
-      return state;
+  items: [], businessId: null, businessName: '',
+  get itemCount() { return get().items.reduce((s, i) => s + i.qty, 0); },
+  get total() { return get().items.reduce((s, i) => s + i.price * i.qty, 0); },
+  addItem: (product) => {
+    const { items, businessId } = get();
+    if (businessId && businessId !== product.businessId) {
+      // Different business - clear cart
+      set({ items: [{ ...product, qty: 1 }], businessId: product.businessId, businessName: product.businessName });
+      return;
     }
-
-    const existing = state.items.find(i => i.id === item.id);
+    const existing = items.find((i) => i.id === product.id);
     if (existing) {
-      return {
-        items: state.items.map(i => i.id === item.id ? { ...i, quantity: i.quantity + item.quantity } : i)
-      };
+      set({ items: items.map((i) => i.id === product.id ? { ...i, qty: i.qty + 1 } : i) });
+    } else {
+      set({ items: [...items, { ...product, qty: 1 }], businessId: product.businessId, businessName: product.businessName });
     }
-    return { items: [...state.items, item], businessId: item.businessId };
-  }),
-
-  removeItem: (id) => set((state) => {
-    const newItems = state.items.filter(i => i.id !== id);
-    return { items: newItems, businessId: newItems.length === 0 ? null : state.businessId };
-  }),
-
-  updateQuantity: (id, delta) => set((state) => {
-    const newItems = state.items.map(i => {
-      if (i.id === id) {
-        return { ...i, quantity: Math.max(1, i.quantity + delta) };
-      }
-      return i;
-    });
-    return { items: newItems };
-  }),
-
-  clearCart: () => set({ items: [], businessId: null }),
-
-  getTotal: () => {
-    return get().items.reduce((total, item) => total + (item.price * item.quantity), 0);
-  }
+  },
+  updateQty: (id, delta) => {
+    const items = get().items.map((i) => i.id === id ? { ...i, qty: i.qty + delta } : i).filter((i) => i.qty > 0);
+    set({ items, businessId: items.length === 0 ? null : get().businessId, businessName: items.length === 0 ? '' : get().businessName });
+  },
+  clearCart: () => set({ items: [], businessId: null, businessName: '' }),
 }));
