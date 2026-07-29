@@ -3,21 +3,21 @@
  */
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView,
-  Platform, TouchableOpacity, Image, Alert, ScrollView, Dimensions,
-} from 'react-native';
+  View, Text, StyleSheet, KeyboardAvoidingView,
+  Platform, TouchableOpacity, Image, Alert, ScrollView, Dimensions} from 'react-native';
 import { theme } from '../theme/theme';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { authApi } from '../api/client';
 import { useAuthStore } from '../store/authStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width } = Dimensions.get('window');
 const LOGO = require('../Logo.png');
 
 // ─── Demo Credentials ─────────────────────────────────────────────────────────
-const DEMO_PHONE    = '9000000001';
-const DEMO_PASSWORD = 'Demo@1234';
+const DEMO_PHONE = '8888888888';
+const DEMO_PASSWORD = 'password123';
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const LoginScreen: React.FC<any> = ({ navigation }) => {
@@ -35,12 +35,12 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      const res = await authApi.login(`+91${phone}`, password);
+      const res = await authApi.login(phone, password);
       await loginSuccess(
         {
           id: res.user.id,
           name: res.user.name,
-          phone: `+91${phone}`,
+          phone: phone,
           preferred_language: res.user.preferred_language || 'en',
         },
         res.access_token,
@@ -48,6 +48,8 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
       );
       navigation.replace('Main');
     } catch (e: any) {
+      console.log(`Error Message:-${e?.response?.data?.error}`);
+
       setError(e?.response?.data?.error?.message || 'Login failed. Check your phone number and password.');
     } finally { setLoading(false); }
   };
@@ -112,8 +114,8 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
             {/* Demo Banner */}
             <TouchableOpacity style={s.demoBanner} onPress={fillDemo} activeOpacity={0.8}>
               <Text style={s.demoTitle}>🧪 Demo Login</Text>
-              <Text style={s.demoLine}>Phone: <Text style={s.demoValue}>9000000001</Text></Text>
-              <Text style={s.demoLine}>Password: <Text style={s.demoValue}>Demo@1234</Text></Text>
+              <Text style={s.demoLine}>Phone: <Text style={s.demoValue}>8888888888</Text></Text>
+              <Text style={s.demoLine}>Password: <Text style={s.demoValue}>password123</Text></Text>
               <Text style={s.demoTap}>Tap to auto-fill →</Text>
             </TouchableOpacity>
           </View>

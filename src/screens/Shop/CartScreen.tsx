@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { ArrowLeft, Plus, Minus, ShoppingCart } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { useCartStore } from '../../store/cartStore';
-import { Button } from '../../components/index';
+import { Button } from '../../components/Button';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const CartScreen: React.FC<any> = ({ navigation }) => {
   const { items, businessName, total, updateQty, clearCart } = useCartStore();
   return (

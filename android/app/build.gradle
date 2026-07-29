@@ -2,6 +2,12 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withInputStream { localProperties.load(it) }
+}
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.
@@ -84,6 +90,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        manifestPlaceholders = [MAPS_API_KEY: localProperties.getProperty('MAPS_API_KEY', '')]
     }
     signingConfigs {
         debug {
@@ -110,10 +117,30 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+    // These must stay in sync with the playServicesLocationVersion /
+    // googlePlayServicesLocationVersion / googlePlayServicesMapsVersion ext
+    // properties in the root build.gradle (see the comment there for why) --
+    // otherwise react-native-geolocation-service's native module ends up
+    // compiled against a different Play Services Location API shape than what
+    // gets packaged at runtime, causing IncompatibleClassChangeError as soon as
+    // Geolocation.getCurrentPosition() runs.
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("com.google.android.gms:play-services-maps:19.1.0")
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {
         implementation jscFlavor
+    }
+}
+
+// Defense in depth: if some other transitive dependency ever requests a play-services
+// version higher than the pin above, force the whole app graph back down to the version
+// react-native-geolocation-service is compiled against (set via root build.gradle ext),
+// so compile-time and runtime never disagree on the FusedLocationProviderClient shape again.
+configurations.all {
+    resolutionStrategy {
+        force "com.google.android.gms:play-services-location:21.3.0"
+        force "com.google.android.gms:play-services-maps:19.1.0"
     }
 }

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { ArrowLeft, Car } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { rideApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const RideHistoryScreen: React.FC<any> = ({ navigation }) => {
   const [rides, setRides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

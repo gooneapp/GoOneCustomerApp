@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { theme } from '../../theme/theme';
-import { Button } from '../../components/index';
+import { Button } from '../../components/Button';
 import { authApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const OtpVerifyScreen: React.FC<any> = ({ route, navigation }) => {
   const { phone } = route.params || {};
   const [otp, setOtp] = useState(['','','','','','']);

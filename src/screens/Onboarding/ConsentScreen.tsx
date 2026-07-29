@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
 import { theme } from '../../theme/theme';
-import { Button } from '../../components/index';
+import { Button } from '../../components/Button';
 import { authApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const ConsentScreen: React.FC<any> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const handleAgree = async () => {

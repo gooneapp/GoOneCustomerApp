@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
-import { Button } from '../../components/index';
+import { Button } from '../../components/Button';
 import { ordersApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const STEPS = ['placed','accepted','preparing','out_for_delivery','completed'];
 export const OrderTrackingScreen: React.FC<any> = ({ route, navigation }) => {
   const { orderId } = route.params || {};

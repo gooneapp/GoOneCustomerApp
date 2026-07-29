@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { theme } from '../../theme/theme';
-import { Input } from '../../components/index';
-import { Button } from '../../components/index';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
 import { authApi } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const SetPasswordScreen: React.FC<any> = ({ route, navigation }) => {
   const { phone, setup_token } = route.params || {};
   const [name, setName] = useState('');

@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { ArrowLeft } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
-import { Button } from '../../components/index';
+import { Button } from '../../components/Button';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { ordersApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const PAYMENT_METHODS = [{ key: 'cash', label: 'Cash on Delivery', emoji: '💵' }, { key: 'upi', label: 'UPI', emoji: '📱' }, { key: 'wallet', label: 'GoOne Wallet', emoji: '💳' }];
 export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
   const { items, businessId, businessName, total, clearCart } = useCartStore();

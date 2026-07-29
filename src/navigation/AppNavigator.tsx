@@ -70,10 +70,11 @@ const navTheme = {
   },
 };
 
-const noHeader = { headerShown: false };
+const stackOptions = { headerShown: false };
+const tabOptions = { headerShown: false };
 
 const AuthNavigator = () => (
-  <AuthStack.Navigator screenOptions={noHeader}>
+  <AuthStack.Navigator screenOptions={stackOptions}>
     <AuthStack.Screen name="Language" component={LanguageSelectScreen} />
     <AuthStack.Screen name="OtpRequest" component={OtpRequestScreen} />
     <AuthStack.Screen name="OtpVerify" component={OtpVerifyScreen} />
@@ -84,14 +85,14 @@ const AuthNavigator = () => (
 );
 
 const HomeNavigator = () => (
-  <HomeStack.Navigator screenOptions={noHeader}>
+  <HomeStack.Navigator screenOptions={stackOptions}>
     <HomeStack.Screen name="Home" component={HomeScreen} />
     <HomeStack.Screen name="Profile" component={ProfileScreen} />
   </HomeStack.Navigator>
 );
 
 const ShopNavigator = () => (
-  <ShopStack.Navigator screenOptions={noHeader}>
+  <ShopStack.Navigator screenOptions={stackOptions}>
     <ShopStack.Screen name="Shop" component={ShopScreen} />
     <ShopStack.Screen name="BusinessDetail" component={BusinessDetailScreen} />
     <ShopStack.Screen name="ProductDetail" component={ProductDetailScreen} />
@@ -101,7 +102,7 @@ const ShopNavigator = () => (
 );
 
 const RidesNavigator = () => (
-  <RidesStack.Navigator screenOptions={noHeader}>
+  <RidesStack.Navigator screenOptions={stackOptions}>
     <RidesStack.Screen name="RideBooking" component={RideBookingScreen} />
     <RidesStack.Screen name="RideTracking" component={RideTrackingScreen} />
     <RidesStack.Screen name="RideHistory" component={RideHistoryScreen} />
@@ -109,14 +110,14 @@ const RidesNavigator = () => (
 );
 
 const OrdersNavigator = () => (
-  <OrdersStack.Navigator screenOptions={noHeader}>
+  <OrdersStack.Navigator screenOptions={stackOptions}>
     <OrdersStack.Screen name="MyOrders" component={MyOrdersScreen} />
     <OrdersStack.Screen name="OrderTracking" component={OrderTrackingScreen} />
   </OrdersStack.Navigator>
 );
 
 const WalletNavigator = () => (
-  <WalletStack.Navigator screenOptions={noHeader}>
+  <WalletStack.Navigator screenOptions={stackOptions}>
     <WalletStack.Screen name="Wallet" component={WalletScreen} />
     <WalletStack.Screen name="ExpenseTracker" component={ExpenseTrackerScreen} />
   </WalletStack.Navigator>
@@ -156,7 +157,7 @@ const tabStyles = StyleSheet.create({
 });
 
 const MainTabs = () => (
-  <Tab.Navigator screenOptions={noHeader} tabBar={(props) => <GoOneTabBar {...props} />}>
+  <Tab.Navigator screenOptions={tabOptions} tabBar={(props) => <GoOneTabBar {...props} />}>
     <Tab.Screen name="HomeTab" component={HomeNavigator} />
     <Tab.Screen name="ShopTab" component={ShopNavigator} />
     <Tab.Screen name="RidesTab" component={RidesNavigator} />
@@ -179,7 +180,7 @@ export const AppNavigator = () => {
 
   return (
     <NavigationContainer theme={navTheme}>
-      <RootStack.Navigator screenOptions={noHeader}>
+      <RootStack.Navigator screenOptions={stackOptions}>
         <RootStack.Screen name="Splash" component={SplashScreen} />
         {!isAuthenticated ? (
           <RootStack.Screen name="Auth" component={AuthNavigator} />

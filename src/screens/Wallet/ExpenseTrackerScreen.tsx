@@ -2,12 +2,13 @@
  * Customer App — Expense Tracker (Personal expenses)
  */
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, FlatList, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Plus, X, Trash2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from '../../theme/theme';
-import { Input } from '../../components/index';
-import { Button } from '../../components/index';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const CATEGORIES = [
   { key: 'food', label: 'Food', emoji: '🍱' },
   { key: 'transport', label: 'Transport', emoji: '🚌' },

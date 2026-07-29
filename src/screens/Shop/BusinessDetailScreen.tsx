@@ -3,11 +3,12 @@
  * Shows products, hours, info, add to cart.
  */
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { ArrowLeft, ShoppingCart, Star, Clock, MapPin } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { catalogApi } from '../../api/client';
 import { useCartStore } from '../../store/cartStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
   const { businessId } = route.params || {};

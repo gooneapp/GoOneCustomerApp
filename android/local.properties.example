@@ -1,0 +1,2 @@
+sdk.dir=/path/to/android/sdk
+MAPS_API_KEY=your-google-maps-api-key-here

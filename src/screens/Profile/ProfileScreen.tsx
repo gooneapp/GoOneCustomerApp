@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, Alert } from 'react-native';
 import { User, LogOut, Settings, Globe } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const ProfileScreen: React.FC<any> = ({ navigation }) => {
   const { user, language, logout } = useAuthStore();
   const handleLogout = async () => { try { await authApi.logout(); } catch {} await logout(); };

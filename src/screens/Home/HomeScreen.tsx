@@ -6,14 +6,15 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, StatusBar,
-  TouchableOpacity, ScrollView, FlatList, ActivityIndicator, TextInput,
-} from 'react-native';
+  View, Text, StyleSheet, StatusBar,
+  TouchableOpacity, ScrollView, FlatList, ActivityIndicator, TextInput} from 'react-native';
 import { MapPin, Search, Bell, User, ShoppingBag, Car, Star, Clock, ChevronRight, Zap } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { useAuthStore } from '../../store/authStore';
+import { useLocationStore } from '../../store/locationStore';
 import { catalogApi } from '../../api/client';
 import { VoiceButton } from '../../components/VoiceButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const SELECTION_NONE = 0;
 const SELECTION_SHOP = 1;
@@ -21,13 +22,28 @@ const SELECTION_RIDE = 2;
 
 export const HomeScreen: React.FC<any> = ({ navigation }) => {
   const { user, language } = useAuthStore();
+  const { requestPermissionAndLocation, location, isLoading: locationLoading, permissionStatus } = useLocationStore();
   const [selection, setSelection] = useState(SELECTION_NONE);
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
 
+  // Request location permission HERE — HomeScreen has no MapView, so
+  // no Google Maps Fragment transaction conflict can occur.
+  useEffect(() => {
+    requestPermissionAndLocation();
+  }, [requestPermissionAndLocation]);
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+
+  const locationLabel = locationLoading
+    ? 'Locating…'
+    : location
+    ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+    : permissionStatus === 'denied' || permissionStatus === 'blocked'
+    ? 'Enable location'
+    : 'Location unavailable';
 
   useEffect(() => {
     if (selection === SELECTION_SHOP) {
@@ -59,7 +75,7 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
           <Text style={styles.greeting}>{greeting} 👋</Text>
           <View style={styles.locationRow}>
             <MapPin color={theme.colors.primary} size={14} />
-            <Text style={styles.location}>Chennai, Tamil Nadu</Text>
+            <Text style={styles.location}>{locationLabel}</Text>
           </View>
         </View>
         <View style={styles.headerRight}>

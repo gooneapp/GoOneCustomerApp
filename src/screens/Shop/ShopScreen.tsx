@@ -1,16 +1,23 @@
 /**
  * GoOne Customer App — Shop Screen
  * Browse all local businesses with search, category filter.
+ *
+ * NOTE: Location permission is handled globally by HomeScreen via locationStore.
+ * This screen only READS the cached permission and location — it never calls
+ * PermissionsAndroid.request(), which would conflict with MapView Fragment init.
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, StatusBar,
+  View, Text, StyleSheet, StatusBar,
   FlatList, TouchableOpacity, RefreshControl, ActivityIndicator,
 } from 'react-native';
-import { Search, MapPin, Star, Clock } from 'lucide-react-native';
+import { Search, MapPin, Star, Clock, Map as MapIcon, List as ListIcon } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { catalogApi } from '../../api/client';
+import { AppMapView } from '../../components/AppMapView';
+import { useLocationStore } from '../../store/locationStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const CATEGORIES = [
   { key: 'all', label: 'All', emoji: '🏪' },
@@ -23,11 +30,15 @@ const CATEGORIES = [
 ];
 
 export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
+  // Read location from global store — never request here
+  const { location: userLocation, isLoading: locationLoading, error: locationError, permissionStatus } = useLocationStore();
+
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState(route?.params?.filter || 'all');
+  const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
   const fetchBusinesses = useCallback(async () => {
     try {
@@ -55,6 +66,17 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
           <MapPin color={theme.colors.primary} size={14} />
           <Text style={styles.location}>Chennai, TN</Text>
         </View>
+      </View>
+
+      <View style={styles.viewToggleRow}>
+        <TouchableOpacity style={[styles.viewToggleBtn, viewMode === 'list' && styles.viewToggleBtnActive]} onPress={() => setViewMode('list')}>
+          <ListIcon color={viewMode === 'list' ? '#fff' : theme.colors.textMuted} size={16} />
+          <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>List</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.viewToggleBtn, viewMode === 'map' && styles.viewToggleBtnActive]} onPress={() => setViewMode('map')}>
+          <MapIcon color={viewMode === 'map' ? '#fff' : theme.colors.textMuted} size={16} />
+          <Text style={[styles.viewToggleText, viewMode === 'map' && styles.viewToggleTextActive]}>Map</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar}>
@@ -87,6 +109,29 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
 
       {loading ? (
         <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
+      ) : viewMode === 'map' ? (
+        <View style={styles.mapContainer}>
+          <AppMapView
+            isLoading={locationLoading}
+            error={locationError}
+            permissionStatus={permissionStatus}
+            initialRegion={userLocation ? {
+              latitude: userLocation.lat,
+              longitude: userLocation.lng,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            } : undefined}
+            markers={businesses
+              .filter((biz) => biz.location?.lat != null && biz.location?.lng != null)
+              .map((biz) => ({
+                lat: biz.location.lat,
+                lng: biz.location.lng,
+                title: biz.name,
+                description: biz.category_name,
+                onPress: () => navigation.navigate('BusinessDetail', { businessId: biz.id }),
+              }))}
+          />
+        </View>
       ) : (
         <FlatList
           data={businesses}
@@ -162,4 +207,11 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xl },
   emptyTitle: { ...theme.typography.h3, marginBottom: 8 },
   emptySub: { ...theme.typography.subtitle },
+  viewToggleRow: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingBottom: 12, gap: 12, justifyContent: 'flex-end' },
+  viewToggleBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceAlt },
+  viewToggleBtnActive: { backgroundColor: theme.colors.primary },
+  viewToggleText: { fontSize: 12, fontWeight: '700', color: theme.colors.textMuted },
+  viewToggleTextActive: { color: '#fff' },
+  mapContainer: { flex: 1, overflow: 'hidden', margin: theme.spacing.md, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border },
+  map: { width: '100%', height: '100%' },
 });

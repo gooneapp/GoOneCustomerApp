@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { theme } from '../../theme/theme';
-import { Input } from '../../components/index';
-import { Button } from '../../components/index';
+import { Input } from '../../components/Input';
+import { Button } from '../../components/Button';
 import { authApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 export const OtpRequestScreen: React.FC<any> = ({ navigation }) => {
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,7 +13,7 @@ export const OtpRequestScreen: React.FC<any> = ({ navigation }) => {
     if (phone.length !== 10) { setError('Enter a valid 10-digit number'); return; }
     setLoading(true);
     try {
-      await authApi.requestOtp(`+91${phone}`, 'registration');
+      await authApi.requestOtp(phone, 'registration');
       navigation.navigate('OtpVerify', { phone: `+91${phone}` });
     } catch (e: any) {
       const msg = e?.response?.data?.error?.message || '';

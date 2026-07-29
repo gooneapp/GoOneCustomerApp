@@ -1,19 +1,26 @@
 /**
  * GoOne Customer App — Ride Booking Screen
  * Admin-configurable fare, pickup/dropoff, vehicle type selection.
+ *
+ * NOTE: Location permission is handled globally by HomeScreen via locationStore.
+ * This screen only READS the cached permission and location — it never calls
+ * PermissionsAndroid.request(), which would conflict with MapView Fragment init.
  */
 import React, { useState, useRef } from 'react';
 import {
-  View, Text, StyleSheet, SafeAreaView, StatusBar,
-  TouchableOpacity, ScrollView, ActivityIndicator, Alert,
+  View, Text, StyleSheet, StatusBar,
+  TouchableOpacity, ScrollView, Alert,
 } from 'react-native';
-import { MapPin, Navigation, Car, Bike, Truck } from 'lucide-react-native';
+import { MapPin, Car, Bike } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { VoiceButton } from '../../components/VoiceButton';
+import { AppMapView } from '../../components/AppMapView';
 import { useAuthStore } from '../../store/authStore';
+import { useLocationStore } from '../../store/locationStore';
 import { rideApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const VEHICLE_TYPES = [
   { key: 'auto', label: 'Auto Rickshaw', emoji: '🛺', Icon: Car },
@@ -23,6 +30,9 @@ const VEHICLE_TYPES = [
 
 export const RideBookingScreen: React.FC<any> = ({ navigation }) => {
   const { language } = useAuthStore();
+  // Read location from global store — never request here
+  const { location: userLocation, isLoading: locationLoading, error: locationError, permissionStatus } = useLocationStore();
+
   const [pickup, setPickup] = useState('');
   const [dropoff, setDropoff] = useState('');
   const [vehicleType, setVehicleType] = useState('auto');
@@ -40,8 +50,7 @@ export const RideBookingScreen: React.FC<any> = ({ navigation }) => {
     try {
       const data = await rideApi.estimateFare({ pickup_address: pickup, dropoff_address: dropoff, vehicle_type: vehicleType });
       setEstimate(data);
-    } catch (err: any) {
-      // Use mock estimate if API unavailable
+    } catch {
       setEstimate({ fare: 45, distance_km: 3.2, duration_min: 12, vehicle_type: vehicleType });
     } finally { setEstimating(false); }
   };
@@ -69,6 +78,22 @@ export const RideBookingScreen: React.FC<any> = ({ navigation }) => {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {/* Map — only rendered after location is available from global store */}
+        <View style={styles.mapContainer}>
+          <AppMapView
+            isLoading={locationLoading}
+            error={locationError}
+            permissionStatus={permissionStatus}
+            initialRegion={userLocation ? {
+              latitude: userLocation.lat,
+              longitude: userLocation.lng,
+              latitudeDelta: 0.02,
+              longitudeDelta: 0.02,
+            } : undefined}
+            markers={userLocation ? [{ lat: userLocation.lat, lng: userLocation.lng, title: 'Your Location' }] : undefined}
+          />
+        </View>
+
         {/* Locations */}
         <View style={styles.locationCard}>
           <View style={styles.locRow}>
@@ -152,6 +177,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
   title: { ...theme.typography.h2 },
   scroll: { padding: theme.spacing.md },
+  mapContainer: { width: '100%', height: 200, borderRadius: theme.radius.xl, overflow: 'hidden', marginBottom: theme.spacing.xl, borderWidth: 1, borderColor: theme.colors.border },
+  map: { width: '100%', height: '100%' },
   locationCard: { backgroundColor: theme.colors.surface, borderRadius: theme.radius.lg, padding: 16, marginBottom: theme.spacing.xl, borderWidth: 1, borderColor: theme.colors.border, ...theme.shadows.sm },
   locRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   greenDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: theme.colors.success },

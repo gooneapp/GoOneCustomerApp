@@ -6,6 +6,28 @@ buildscript {
         targetSdkVersion = 36
         ndkVersion = "27.1.12297006"
         kotlinVersion = "2.1.20"
+
+        // Pin Play Services Location/Maps to a single consistent version across
+        // every subproject (react-native-geolocation-service, react-native-maps,
+        // and the app module itself). Without this, react-native-geolocation-service
+        // compiles its native module against its own old default
+        // (play-services-location 18.0.0, where FusedLocationProviderClient is a
+        // *class*), while react-native-maps' higher default (21.3.0, where
+        // FusedLocationProviderClient is an *interface*) wins Gradle's normal
+        // highest-version-wins resolution for the final app package. That mismatch
+        // between compile-time shape and runtime shape is what caused:
+        //   java.lang.IncompatibleClassChangeError: Found interface
+        //   com.google.android.gms.location.FusedLocationProviderClient, but class
+        //   was expected
+        // at FusedLocationProvider.java:97 as soon as getCurrentPosition() ran.
+        // Aligning both libraries on the SAME version (matching what
+        // react-native-maps already resolves to, since react-native-maps'
+        // FusedLocationSource.java requires the newer `Priority` class that only
+        // exists from ~21.0.0 onward, so we can't go the other way and pin down to
+        // 18.0.0) fixes the mismatch without touching either library's source.
+        playServicesLocationVersion = "21.3.0"        // read by react-native-geolocation-service
+        googlePlayServicesLocationVersion = "21.3.0"  // read by react-native-maps
+        googlePlayServicesMapsVersion = "19.1.0"      // read by react-native-maps
     }
     repositories {
         google()

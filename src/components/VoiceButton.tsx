@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import { TouchableOpacity, Text } from 'react-native';
+import Tts from 'react-native-tts';
 import { theme } from '../theme/theme';
 
 interface VoiceButtonProps {
@@ -12,6 +13,9 @@ interface VoiceButtonProps {
   size?: number;
   color?: string;
 }
+
+const LOCALE_MAP: Record<'ta' | 'en' | 'hi', string> = { en: 'en-IN', ta: 'ta-IN', hi: 'hi-IN' };
+let ttsInitialized = false;
 
 export const VoiceButton: React.FC<VoiceButtonProps> = ({
   text,
@@ -23,11 +27,21 @@ export const VoiceButton: React.FC<VoiceButtonProps> = ({
     style={{ padding: 4 }}
     accessibilityLabel="Hear this text"
     accessibilityHint={text}
-    onPress={() => {
-      // Text-to-speech integration point.
-      // Admin configures voice on/off per language from Admin CMS.
-      // In production: react-native-tts or expo-speech
-      console.log(`[VoiceButton] Speaking in ${language}: ${text}`);
+    onPress={async () => {
+      try {
+        if (!ttsInitialized) {
+          await Tts.getInitStatus();
+          ttsInitialized = true;
+        }
+        // Some devices lack the exact locale pack — swallow and fall back
+        // to whatever default voice is already active.
+        await Tts.setDefaultLanguage(LOCALE_MAP[language] ?? 'en-IN').catch(() => {});
+        Tts.stop();
+        Tts.speak(text);
+      } catch {
+        // No TTS engine available on this device — fail silently rather
+        // than crash the screen over a decorative speaker icon.
+      }
     }}
   >
     <Text style={{ fontSize: size, color }}>🔊</Text>

@@ -2,9 +2,10 @@
  * GoOne Customer App — Language Select Screen
  */
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { theme } from '../../theme/theme';
 import { useAuthStore } from '../../store/authStore';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const LANGUAGES = [
   { code: 'ta' as const, name: 'தமிழ்', english: 'Tamil', flag: '🇮🇳' },

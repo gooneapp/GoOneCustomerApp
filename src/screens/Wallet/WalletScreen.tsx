@@ -3,10 +3,11 @@
  * Balance, transaction history, and Expense Tracker link.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
 import { Wallet, TrendingDown, Plus } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { creditApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const WalletScreen: React.FC<any> = ({ navigation }) => {
   const [balance, setBalance] = useState<any>(null);

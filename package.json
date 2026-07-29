@@ -19,10 +19,12 @@
     "lucide-react-native": "^0.410.0",
     "react": "19.2.3",
     "react-native": "0.86.0",
+    "react-native-geolocation-service": "^5.3.1",
     "react-native-maps": "^1.29.0",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.0.0",
     "react-native-svg": "^15.4.0",
+    "react-native-tts": "^4.1.1",
     "zustand": "^4.5.2"
   },
   "devDependencies": {

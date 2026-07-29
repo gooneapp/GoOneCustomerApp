@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
 import { Clock, Package } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { ordersApi } from '../../api/client';
+import { SafeAreaView } from 'react-native-safe-area-context';
 const STATUS_COLORS: any = { placed: theme.colors.warning, accepted: theme.colors.primary, preparing: theme.colors.secondary, out_for_delivery: theme.colors.info, completed: theme.colors.success, cancelled: theme.colors.danger };
 export const MyOrdersScreen: React.FC<any> = ({ navigation }) => {
   const [orders, setOrders] = useState<any[]>([]);

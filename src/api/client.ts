@@ -5,7 +5,7 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const BASE_URL = __DEV__
-  ? 'http://10.0.2.2:5001/api/v1'
+  ? 'http://localhost:4000/api/v1'
   : 'https://api.goone.tech/api/v1';
 
 let accessToken: string | null = null;
@@ -69,12 +69,79 @@ export const authApi = {
   logout: () => api.post('/auth/logout'),
 };
 
+// Reshapes the real backend business row — camelCase fields + nested
+// `category: {id, name}` — into the flat shape Home/Shop already read
+// ({category_id, category_name, location: {lat, lng}}). Exported so screens
+// can reuse it if they ever map a single business outside listBusinesses.
+export function mapBusiness(raw: any) {
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description,
+    category_id: raw.category?.id,
+    category_name: raw.category?.name,
+    location: { lat: raw.locationLat, lng: raw.locationLng },
+    address: raw.address,
+  };
+}
+
+export interface ListBusinessesParams {
+  // NOTE: the real backend schema (nearbyBusinessesSchema) has no
+  // `.optional()` on lat/lng — a request without them will 400. They are
+  // typed optional here only so this signature doesn't break the existing
+  // HomeScreen/ShopScreen call sites (which don't pass them yet) while
+  // those screens are reworked in a separate pass to source them from
+  // useLocationStore(). Always pass both in new code.
+  lat?: number;
+  lng?: number;
+  radius?: number;
+  category_id?: string;
+  page?: number;
+  limit?: number;
+}
+
 export const catalogApi = {
-  listBusinesses: (params?: any) => req<any>({ method: 'GET', url: '/customer/businesses', params }),
-  getBusinessDetail: (id: string) => req<any>({ method: 'GET', url: `/customer/businesses/${id}` }),
-  getProducts: (businessId: string, params?: any) => req<any>({ method: 'GET', url: `/customer/businesses/${businessId}/products`, params }),
+  // Backend route is /businesses/nearby (no /customer prefix). There is no
+  // server-side `search` param, so none is sent here — screens filter
+  // client-side over the fetched list instead.
+  listBusinesses: async (params?: ListBusinessesParams) => {
+    const data = await req<{ businesses: any[]; meta?: any }>({
+      method: 'GET',
+      url: '/businesses/nearby',
+      params,
+    });
+    return { ...data, businesses: (data?.businesses || []).map(mapBusiness) };
+  },
+  getBusinessDetail: (id: string) => req<any>({ method: 'GET', url: `/businesses/${id}` }),
+  getProducts: (businessId: string, params?: any) => req<any>({ method: 'GET', url: `/businesses/${businessId}/products`, params }),
   searchProducts: (params: any) => req<any>({ method: 'GET', url: '/customer/products/search', params }),
   getCategories: () => req<any[]>({ method: 'GET', url: '/categories' }),
+};
+
+export const placesApi = {
+  autocomplete: (input: string, sessionToken: string) =>
+    req<{ predictions: { placeId: string; description: string }[] }>({
+      method: 'GET',
+      url: '/places/autocomplete',
+      params: { input, session_token: sessionToken },
+    }),
+  details: (placeId: string, sessionToken: string) =>
+    req<{ lat: number; lng: number; formattedAddress: string }>({
+      method: 'GET',
+      url: '/places/details',
+      params: { place_id: placeId, session_token: sessionToken },
+    }),
+  reverseGeocode: (lat: number, lng: number) =>
+    req<{ formattedAddress: string | null }>({
+      method: 'GET',
+      url: '/places/reverse-geocode',
+      params: { lat, lng },
+    }),
+};
+
+export const notificationsApi = {
+  list: () => req<any[]>({ method: 'GET', url: '/notifications' }),
+  markRead: (id: string) => req<any>({ method: 'PATCH', url: `/notifications/${id}/read` }),
 };
 
 export const ordersApi = {
