@@ -3,10 +3,13 @@
  * Balance, transaction history, and Expense Tracker link.
  */
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList } from 'react-native';
 import { Wallet, TrendingDown, Plus } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { creditApi } from '../../api/client';
+import { AppHeader } from '../../components/AppHeader';
+import { LoadingView } from '../../components/LoadingView';
+import { EmptyState } from '../../components/EmptyState';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export const WalletScreen: React.FC<any> = ({ navigation }) => {
@@ -20,15 +23,21 @@ export const WalletScreen: React.FC<any> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Wallet & Credits</Text>
+
+      {/* variant="main" has no rightSlot — the Expenses shortcut is kept as
+          its own row below the header rather than dropped. */}
+      <AppHeader variant="main" onLocationPress={() => navigation.navigate('LocationPicker')} />
+
+      <View style={styles.actionsRow}>
+        <Text style={styles.actionsTitle}>Wallet & Credits</Text>
         <TouchableOpacity style={styles.expenseBtn} onPress={() => navigation.navigate('ExpenseTracker')}>
           <TrendingDown color={theme.colors.danger} size={18} />
           <Text style={styles.expenseBtnText}>Expenses</Text>
         </TouchableOpacity>
       </View>
+
       {loading ? (
-        <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
+        <LoadingView />
       ) : (
         <FlatList
           data={balance?.transactions || []}
@@ -45,12 +54,7 @@ export const WalletScreen: React.FC<any> = ({ navigation }) => {
             </View>
           }
           contentContainerStyle={styles.list}
-          ListEmptyComponent={
-            <View style={styles.emptyTx}>
-              <Text style={{ fontSize: 40, marginBottom: 12 }}>💰</Text>
-              <Text style={styles.emptyText}>No transactions yet</Text>
-            </View>
-          }
+          ListEmptyComponent={<EmptyState icon="💰" title="No transactions yet" />}
           renderItem={({ item }) => (
             <View style={styles.txRow}>
               <View style={[styles.txIcon, { backgroundColor: item.type === 'credit' ? theme.colors.successLight : theme.colors.dangerLight }]}>
@@ -73,11 +77,10 @@ export const WalletScreen: React.FC<any> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  title: { ...theme.typography.h2 },
+  actionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md },
+  actionsTitle: { ...theme.typography.h2 },
   expenseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.md, borderWidth: 1.5, borderColor: theme.colors.dangerLight, backgroundColor: theme.colors.dangerLight },
   expenseBtnText: { color: theme.colors.danger, fontWeight: '700', fontSize: 13 },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   list: { padding: theme.spacing.md },
   balanceCard: { backgroundColor: theme.colors.primary, borderRadius: theme.radius.xl, padding: 28, alignItems: 'center', marginBottom: theme.spacing.xl, ...theme.shadows.primary },
   balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '600', marginTop: 12 },
@@ -89,6 +92,4 @@ const styles = StyleSheet.create({
   txLabel: { ...theme.typography.bodyMedium },
   txDate: { ...theme.typography.caption, marginTop: 2 },
   txAmount: { fontSize: 16, fontWeight: '800' },
-  emptyTx: { alignItems: 'center', padding: theme.spacing.xl },
-  emptyText: { ...theme.typography.subtitle },
 });

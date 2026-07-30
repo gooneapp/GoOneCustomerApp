@@ -105,14 +105,18 @@ export const catalogApi = {
   // server-side `search` param, so none is sent here — screens filter
   // client-side over the fetched list instead.
   listBusinesses: async (params?: ListBusinessesParams) => {
-    const data = await req<{ businesses: any[]; meta?: any }>({
+    // Backend returns the array directly as the envelope's `data` (with
+    // `meta` as a sibling of `data`, not nested inside it) — NOT
+    // `{ businesses: [...] }`. req() already unwraps to response.data.data,
+    // so here that's the array itself.
+    const businesses = await req<any[]>({
       method: 'GET',
       url: '/businesses/nearby',
       params,
     });
-    return { ...data, businesses: (data?.businesses || []).map(mapBusiness) };
+    return { businesses: (businesses || []).map(mapBusiness) };
   },
-  getBusinessDetail: (id: string) => req<any>({ method: 'GET', url: `/businesses/${id}` }),
+  getBusinessDetail: async (id: string) => mapBusiness(await req<any>({ method: 'GET', url: `/businesses/${id}` })),
   getProducts: (businessId: string, params?: any) => req<any>({ method: 'GET', url: `/businesses/${businessId}/products`, params }),
   searchProducts: (params: any) => req<any>({ method: 'GET', url: '/customer/products/search', params }),
   getCategories: () => req<any[]>({ method: 'GET', url: '/categories' }),
@@ -120,7 +124,7 @@ export const catalogApi = {
 
 export const placesApi = {
   autocomplete: (input: string, sessionToken: string) =>
-    req<{ predictions: { placeId: string; description: string }[] }>({
+    req<{ placeId: string; description: string }[]>({
       method: 'GET',
       url: '/places/autocomplete',
       params: { input, session_token: sessionToken },

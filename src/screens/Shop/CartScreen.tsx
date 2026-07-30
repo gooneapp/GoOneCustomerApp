@@ -1,19 +1,20 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { ArrowLeft, Plus, Minus, ShoppingCart } from 'lucide-react-native';
+import { Plus, Minus, ShoppingCart } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { useCartStore } from '../../store/cartStore';
 import { Button } from '../../components/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/AppHeader';
 export const CartScreen: React.FC<any> = ({ navigation }) => {
   const { items, businessName, total, updateQty, clearCart } = useCartStore();
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><ArrowLeft color={theme.colors.text} size={24} /></TouchableOpacity>
-        <Text style={styles.title}>Your Cart</Text>
-        {items.length > 0 && <TouchableOpacity onPress={clearCart}><Text style={styles.clear}>Clear</Text></TouchableOpacity>}
-      </View>
+      <AppHeader
+        variant="sub"
+        title="Your Cart"
+        rightSlot={items.length > 0 ? <TouchableOpacity onPress={clearCart}><Text style={styles.clear}>Clear</Text></TouchableOpacity> : undefined}
+      />
       {items.length === 0 ? (
         <View style={styles.empty}>
           <ShoppingCart color={theme.colors.textLight} size={60} />
@@ -56,9 +57,6 @@ export const CartScreen: React.FC<any> = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: theme.spacing.md, paddingVertical: 12, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  backBtn: { padding: 6 },
-  title: { ...theme.typography.h3, flex: 1 },
   clear: { color: theme.colors.danger, fontWeight: '700' },
   bizName: { padding: theme.spacing.md, ...theme.typography.caption },
   list: { padding: theme.spacing.md },

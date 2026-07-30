@@ -1,20 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { ArrowLeft, Car } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { Car } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { rideApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
-export const RideHistoryScreen: React.FC<any> = ({ navigation }) => {
+import { AppHeader } from '../../components/AppHeader';
+export const RideHistoryScreen: React.FC<any> = () => {
   const [rides, setRides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => { rideApi.listHistory({ limit: 20 }).then((d) => setRides(d?.rides || [])).catch(() => setRides([])).finally(() => setLoading(false)); }, []);
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><ArrowLeft color={theme.colors.text} size={24} /></TouchableOpacity>
-        <Text style={styles.title}>Ride History</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <AppHeader variant="sub" title="Ride History" />
       {loading ? <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View> : (
         <FlatList data={rides} keyExtractor={(i) => i.id} contentContainerStyle={styles.list}
           ListEmptyComponent={<View style={styles.centered}><Car color={theme.colors.textLight} size={60} /><Text style={styles.emptyText}>No rides yet</Text></View>}
@@ -38,9 +35,6 @@ export const RideHistoryScreen: React.FC<any> = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: 12, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  backBtn: { padding: 8 },
-  title: { ...theme.typography.h3 },
   list: { padding: theme.spacing.md, gap: 10 },
   card: { flexDirection: 'row', backgroundColor: theme.colors.surface, borderRadius: theme.radius.md, padding: 14, borderWidth: 1, borderColor: theme.colors.border, ...theme.shadows.sm },
   from: { ...theme.typography.bodyMedium, fontWeight: '700' },

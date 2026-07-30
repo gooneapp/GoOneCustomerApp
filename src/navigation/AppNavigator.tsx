@@ -13,6 +13,7 @@ import { Home, ShoppingBag, Car, Wallet } from 'lucide-react-native';
 
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
+import { useNotificationStore } from '../store/notificationStore';
 
 // ── Auth
 import { SplashScreen } from '../screens/SplashScreen';
@@ -48,6 +49,11 @@ import { ExpenseTrackerScreen } from '../screens/Wallet/ExpenseTrackerScreen';
 
 // ── Profile
 import { ProfileScreen } from '../screens/Profile/ProfileScreen';
+
+// ── Location + Notifications (registered on all 4 tab stacks — the
+// main-variant AppHeader on Home/Shop/Rides/Wallet is the entry point to both)
+import { LocationPickerScreen } from '../screens/Location/LocationPickerScreen';
+import { NotificationsScreen } from '../screens/Notifications/NotificationsScreen';
 
 const RootStack = createNativeStackNavigator();
 const AuthStack = createNativeStackNavigator();
@@ -88,6 +94,8 @@ const HomeNavigator = () => (
   <HomeStack.Navigator screenOptions={stackOptions}>
     <HomeStack.Screen name="Home" component={HomeScreen} />
     <HomeStack.Screen name="Profile" component={ProfileScreen} />
+    <HomeStack.Screen name="LocationPicker" component={LocationPickerScreen} />
+    <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
   </HomeStack.Navigator>
 );
 
@@ -98,6 +106,8 @@ const ShopNavigator = () => (
     <ShopStack.Screen name="ProductDetail" component={ProductDetailScreen} />
     <ShopStack.Screen name="Cart" component={CartScreen} />
     <ShopStack.Screen name="Checkout" component={CheckoutScreen} />
+    <ShopStack.Screen name="LocationPicker" component={LocationPickerScreen} />
+    <ShopStack.Screen name="Notifications" component={NotificationsScreen} />
   </ShopStack.Navigator>
 );
 
@@ -106,6 +116,8 @@ const RidesNavigator = () => (
     <RidesStack.Screen name="RideBooking" component={RideBookingScreen} />
     <RidesStack.Screen name="RideTracking" component={RideTrackingScreen} />
     <RidesStack.Screen name="RideHistory" component={RideHistoryScreen} />
+    <RidesStack.Screen name="LocationPicker" component={LocationPickerScreen} />
+    <RidesStack.Screen name="Notifications" component={NotificationsScreen} />
   </RidesStack.Navigator>
 );
 
@@ -120,6 +132,8 @@ const WalletNavigator = () => (
   <WalletStack.Navigator screenOptions={stackOptions}>
     <WalletStack.Screen name="Wallet" component={WalletScreen} />
     <WalletStack.Screen name="ExpenseTracker" component={ExpenseTrackerScreen} />
+    <WalletStack.Screen name="LocationPicker" component={LocationPickerScreen} />
+    <WalletStack.Screen name="Notifications" component={NotificationsScreen} />
   </WalletStack.Navigator>
 );
 
@@ -167,8 +181,17 @@ const MainTabs = () => (
 
 export const AppNavigator = () => {
   const { isAuthenticated, isLoading, initialize } = useAuthStore();
+  const fetchNotifications = useNotificationStore((s) => s.fetch);
 
-  useEffect(() => { initialize(); }, []);
+  // Mount-once effect (auth init + one-time notification fetch so the
+  // AppHeader bell badge is populated at app start). initialize/
+  // fetchNotifications are stable zustand action references, so
+  // intentionally not in the dependency array.
+  useEffect(() => {
+    initialize();
+    fetchNotifications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isLoading) {
     return (

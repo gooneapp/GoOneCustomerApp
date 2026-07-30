@@ -9,64 +9,101 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, StatusBar,
-  FlatList, TouchableOpacity, RefreshControl, ActivityIndicator,
+  FlatList, TouchableOpacity, RefreshControl,
 } from 'react-native';
-import { Search, MapPin, Star, Clock, Map as MapIcon, List as ListIcon } from 'lucide-react-native';
+import { Search, Star, Clock, Map as MapIcon, List as ListIcon } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { catalogApi } from '../../api/client';
+import { AppHeader } from '../../components/AppHeader';
 import { AppMapView } from '../../components/AppMapView';
+import { LoadingView } from '../../components/LoadingView';
+import { EmptyState } from '../../components/EmptyState';
 import { useLocationStore } from '../../store/locationStore';
+import { emojiForCategory } from '../../utils/categoryEmoji';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const CATEGORIES = [
-  { key: 'all', label: 'All', emoji: '🏪' },
-  { key: 'grocery', label: 'Grocery', emoji: '🛒' },
-  { key: 'restaurant', label: 'Food', emoji: '🍱' },
-  { key: 'medical', label: 'Medical', emoji: '💊' },
-  { key: 'milk_water', label: 'Milk/Water', emoji: '🥛' },
-  { key: 'farmer', label: 'Farmer', emoji: '🌾' },
-  { key: 'service', label: 'Services', emoji: '✂️' },
+interface Category {
+  id: string;
+  name: string;
+  emoji: string;
+}
+
+const ALL_CATEGORY: Category = { id: 'all', name: 'All', emoji: '🏪' };
+
+// Used only if catalogApi.getCategories() fails — keeps the chip row from
+// disappearing entirely. These ids are not real backend UUIDs, so a filter
+// selection made while running on this fallback will not match real
+// business rows; that's an acceptable degradation versus no chips at all.
+const FALLBACK_CATEGORIES: Category[] = [
+  { id: 'grocery', name: 'Grocery', emoji: '🛒' },
+  { id: 'restaurant', name: 'Food', emoji: '🍱' },
+  { id: 'medical', name: 'Medical', emoji: '💊' },
+  { id: 'milk_water', name: 'Milk/Water', emoji: '🥛' },
+  { id: 'farmer', name: 'Farmer', emoji: '🌾' },
+  { id: 'service', name: 'Services', emoji: '✂️' },
 ];
 
 export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
   // Read location from global store — never request here
   const { location: userLocation, isLoading: locationLoading, error: locationError, permissionStatus } = useLocationStore();
 
+  const [categories, setCategories] = useState<Category[]>(FALLBACK_CATEGORIES);
   const [businesses, setBusinesses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [category, setCategory] = useState(route?.params?.filter || 'all');
+  const [category, setCategory] = useState<string>(route?.params?.filter || 'all');
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
 
+  useEffect(() => {
+    catalogApi.getCategories()
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCategories(data.map((c: any) => ({ id: c.id, name: c.name, emoji: emojiForCategory(c.name) })));
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load categories, keeping fallback list', err);
+      });
+  }, []);
+
   const fetchBusinesses = useCallback(async () => {
+    if (!userLocation) return;
+    setLoading(true);
+    setError(null);
     try {
-      const params: any = { limit: 30 };
-      if (search) params.search = search;
-      if (category !== 'all') params.category = category;
+      const params: any = { lat: userLocation.lat, lng: userLocation.lng, limit: 30 };
+      if (category !== 'all') params.category_id = category;
       const data = await catalogApi.listBusinesses(params);
       setBusinesses(data?.businesses || []);
-    } catch {} finally { setLoading(false); setRefreshing(false); }
-  }, [search, category]);
+    } catch (err: any) {
+      setError(err?.response?.data?.error?.message || 'Unable to load businesses.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [category, userLocation]);
 
+  // No server-side `search` param exists — search filters the already
+  // fetched list client-side (below), so only category/location changes
+  // need to re-hit the network.
   useEffect(() => {
-    const t = setTimeout(fetchBusinesses, 300);
-    return () => clearTimeout(t);
-  }, [fetchBusinesses]);
+    if (userLocation) fetchBusinesses();
+  }, [fetchBusinesses, userLocation]);
 
-  const EMOJI_MAP: Record<string, string> = { restaurant: '🍱', medical: '💊', milk_water: '🥛', farmer: '🌾', service: '✂️', grocery: '🛒' };
+  const filteredBusinesses = search.trim()
+    ? businesses.filter((b) => (b.name || '').toLowerCase().includes(search.trim().toLowerCase()))
+    : businesses;
+
+  const chips = [ALL_CATEGORY, ...categories];
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Shop Local</Text>
-        <View style={styles.locationRow}>
-          <MapPin color={theme.colors.primary} size={14} />
-          <Text style={styles.location}>Chennai, TN</Text>
-        </View>
-      </View>
+
+      <AppHeader variant="main" onLocationPress={() => navigation.navigate('LocationPicker')} />
 
       <View style={styles.viewToggleRow}>
         <TouchableOpacity style={[styles.viewToggleBtn, viewMode === 'list' && styles.viewToggleBtnActive]} onPress={() => setViewMode('list')}>
@@ -91,24 +128,42 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
 
       {/* Category Filter */}
       <FlatList
-        data={CATEGORIES}
+        data={chips}
         horizontal
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(i) => i.key}
+        keyExtractor={(i) => i.id}
         contentContainerStyle={styles.catFilter}
         renderItem={({ item }) => (
           <TouchableOpacity
-            style={[styles.catChip, category === item.key && styles.catChipActive]}
-            onPress={() => setCategory(item.key)}
+            style={[styles.catChip, category === item.id && styles.catChipActive]}
+            onPress={() => setCategory(item.id)}
           >
             <Text style={styles.catEmoji}>{item.emoji}</Text>
-            <Text style={[styles.catLabel, category === item.key && styles.catLabelActive]}>{item.label}</Text>
+            <Text style={[styles.catLabel, category === item.id && styles.catLabelActive]}>{item.name}</Text>
           </TouchableOpacity>
         )}
       />
 
-      {loading ? (
-        <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
+      {!userLocation ? (
+        locationLoading ? (
+          <LoadingView />
+        ) : (
+          <EmptyState
+            icon="📍"
+            title={permissionStatus === 'denied' || permissionStatus === 'blocked' ? 'Location access needed' : 'Waiting for location'}
+            subtitle="We need your location to show nearby businesses."
+          />
+        )
+      ) : loading ? (
+        <LoadingView />
+      ) : error ? (
+        <EmptyState
+          icon="⚠️"
+          title="Couldn't load businesses"
+          subtitle={error}
+          ctaLabel="Retry"
+          onCtaPress={fetchBusinesses}
+        />
       ) : viewMode === 'map' ? (
         <View style={styles.mapContainer}>
           <AppMapView
@@ -121,7 +176,7 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
               latitudeDelta: 0.05,
               longitudeDelta: 0.05,
             } : undefined}
-            markers={businesses
+            markers={filteredBusinesses
               .filter((biz) => biz.location?.lat != null && biz.location?.lng != null)
               .map((biz) => ({
                 lat: biz.location.lat,
@@ -134,16 +189,12 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
         </View>
       ) : (
         <FlatList
-          data={businesses}
+          data={filteredBusinesses}
           keyExtractor={(i) => i.id}
           contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchBusinesses(); }} colors={[theme.colors.primary]} />}
           ListEmptyComponent={
-            <View style={styles.centered}>
-              <Text style={{ fontSize: 48, marginBottom: 12 }}>🔍</Text>
-              <Text style={styles.emptyTitle}>No businesses found</Text>
-              <Text style={styles.emptySub}>Try a different search or category</Text>
-            </View>
+            <EmptyState icon="🔍" title="No businesses found" subtitle="Try a different search or category" />
           }
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -152,7 +203,7 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
               activeOpacity={0.85}
             >
               <View style={styles.bizEmoji}>
-                <Text style={{ fontSize: 32 }}>{EMOJI_MAP[item.category_id] || '🏪'}</Text>
+                <Text style={{ fontSize: 32 }}>{emojiForCategory(item.category_name)}</Text>
               </View>
               <View style={styles.bizInfo}>
                 <Text style={styles.bizName}>{item.name}</Text>
@@ -180,10 +231,6 @@ export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { paddingHorizontal: theme.spacing.lg, paddingTop: theme.spacing.md, paddingBottom: 8, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  title: { ...theme.typography.h2 },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-  location: { fontSize: 12, color: theme.colors.textMuted, fontWeight: '600' },
   searchBar: { padding: theme.spacing.md },
   catFilter: { paddingHorizontal: theme.spacing.md, paddingBottom: 12, gap: 8 },
   catChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.full, borderWidth: 1.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
@@ -204,14 +251,10 @@ const styles = StyleSheet.create({
   bizDist: { fontSize: 12, color: theme.colors.textMuted },
   closedBadge: { alignSelf: 'flex-start', backgroundColor: theme.colors.dangerLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6, marginTop: 4 },
   closedText: { color: theme.colors.danger, fontSize: 10, fontWeight: '800' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xl },
-  emptyTitle: { ...theme.typography.h3, marginBottom: 8 },
-  emptySub: { ...theme.typography.subtitle },
-  viewToggleRow: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingBottom: 12, gap: 12, justifyContent: 'flex-end' },
+  viewToggleRow: { flexDirection: 'row', paddingHorizontal: theme.spacing.md, paddingTop: 12, paddingBottom: 12, gap: 12, justifyContent: 'flex-end' },
   viewToggleBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, borderRadius: theme.radius.full, backgroundColor: theme.colors.surfaceAlt },
   viewToggleBtnActive: { backgroundColor: theme.colors.primary },
   viewToggleText: { fontSize: 12, fontWeight: '700', color: theme.colors.textMuted },
   viewToggleTextActive: { color: '#fff' },
   mapContainer: { flex: 1, overflow: 'hidden', margin: theme.spacing.md, borderRadius: theme.radius.xl, borderWidth: 1, borderColor: theme.colors.border },
-  map: { width: '100%', height: '100%' },
 });

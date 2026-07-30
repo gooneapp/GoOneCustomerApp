@@ -1,12 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { Button } from '../../components/Button';
 import { useCartStore } from '../../store/cartStore';
 import { useAuthStore } from '../../store/authStore';
 import { ordersApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/AppHeader';
 const PAYMENT_METHODS = [{ key: 'cash', label: 'Cash on Delivery', emoji: '💵' }, { key: 'upi', label: 'UPI', emoji: '📱' }, { key: 'wallet', label: 'GoOne Wallet', emoji: '💳' }];
 export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
   const { items, businessId, businessName, total, clearCart } = useCartStore();
@@ -35,11 +35,7 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
   };
   return (
     <SafeAreaView style={styles.safe}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><ArrowLeft color={theme.colors.text} size={24} /></TouchableOpacity>
-        <Text style={styles.title}>Checkout</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <AppHeader variant="sub" title="Checkout" />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll}>
           <Text style={styles.section}>Order Summary</Text>
@@ -76,9 +72,6 @@ export const CheckoutScreen: React.FC<any> = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: 12, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  backBtn: { padding: 8 },
-  title: { ...theme.typography.h3 },
   scroll: { padding: theme.spacing.lg },
   section: { ...theme.typography.captionBold, textTransform: 'uppercase', marginBottom: 10, marginTop: theme.spacing.lg, color: theme.colors.text },
   itemRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight },

@@ -9,6 +9,7 @@ import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/AppHeader';
 const CATEGORIES = [
   { key: 'food', label: 'Food', emoji: '🍱' },
   { key: 'transport', label: 'Transport', emoji: '🚌' },
@@ -18,7 +19,7 @@ const CATEGORIES = [
   { key: 'other', label: 'Other', emoji: '📌' },
 ];
 const KEY = 'goone_customer_expenses';
-export const ExpenseTrackerScreen: React.FC<any> = ({ navigation }) => {
+export const ExpenseTrackerScreen: React.FC<any> = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ category: 'food', amount: '', note: '' });
@@ -35,11 +36,11 @@ export const ExpenseTrackerScreen: React.FC<any> = ({ navigation }) => {
   const getCat = (k: string) => CATEGORIES.find((c) => c.key === k) || CATEGORIES[5];
   return (
     <SafeAreaView style={styles.safe}><StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← Wallet</Text></TouchableOpacity>
-        <Text style={styles.title}>My Expenses</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)}><Plus color="#fff" size={20} /></TouchableOpacity>
-      </View>
+      <AppHeader
+        variant="sub"
+        title="Expenses"
+        rightSlot={<TouchableOpacity style={styles.addBtn} onPress={() => setShowAdd(true)}><Plus color="#fff" size={20} /></TouchableOpacity>}
+      />
       <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Total Spent</Text>
         <Text style={styles.summaryAmount}>₹{total.toLocaleString('en-IN')}</Text>
@@ -84,10 +85,6 @@ export const ExpenseTrackerScreen: React.FC<any> = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: 12, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border },
-  backBtn: { padding: 8 },
-  backText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
-  title: { ...theme.typography.h3 },
   addBtn: { backgroundColor: theme.colors.danger, width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
   summaryCard: { backgroundColor: theme.colors.dangerLight, margin: theme.spacing.md, borderRadius: theme.radius.lg, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: theme.colors.danger + '40' },
   summaryLabel: { color: theme.colors.danger, fontWeight: '700', fontSize: 13 },

@@ -5,16 +5,13 @@ import { theme } from '../../theme/theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
-export const ProfileScreen: React.FC<any> = ({ navigation }) => {
+import { AppHeader } from '../../components/AppHeader';
+export const ProfileScreen: React.FC<any> = () => {
   const { user, language, logout } = useAuthStore();
   const handleLogout = async () => { try { await authApi.logout(); } catch {} await logout(); };
   return (
     <SafeAreaView style={styles.safe}><StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><Text style={styles.backText}>← Home</Text></TouchableOpacity>
-        <Text style={styles.title}>Profile</Text>
-        <View style={{ width: 60 }} />
-      </View>
+      <AppHeader variant="sub" title="Profile" />
       <View style={styles.container}>
         <View style={styles.avatar}><Text style={styles.avatarText}>{(user?.name || 'U')[0].toUpperCase()}</Text></View>
         <Text style={styles.name}>{user?.name}</Text>
@@ -44,10 +41,6 @@ export const ProfileScreen: React.FC<any> = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: theme.spacing.md, paddingVertical: 12, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  backBtn: { padding: 8 },
-  backText: { color: theme.colors.primary, fontWeight: '700', fontSize: 14 },
-  title: { ...theme.typography.h3 },
   container: { padding: theme.spacing.xl, alignItems: 'center' },
   avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: theme.colors.primary, justifyContent: 'center', alignItems: 'center', marginBottom: 16 },
   avatarText: { fontSize: 32, fontWeight: '900', color: '#fff' },

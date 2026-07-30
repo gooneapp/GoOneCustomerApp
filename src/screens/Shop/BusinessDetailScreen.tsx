@@ -4,11 +4,12 @@
  */
 import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
-import { ArrowLeft, ShoppingCart, Star, Clock, MapPin } from 'lucide-react-native';
+import { ShoppingCart, Star, Clock, MapPin } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { catalogApi } from '../../api/client';
 import { useCartStore } from '../../store/cartStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/AppHeader';
 
 export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
   const { businessId } = route.params || {};
@@ -21,7 +22,14 @@ export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
     Promise.all([
       catalogApi.getBusinessDetail(businessId),
       catalogApi.getProducts(businessId),
-    ]).then(([b, p]) => { setBiz(b); setProducts(p?.products || []); }).catch(() => {}).finally(() => setLoading(false));
+    ]).then(([b, p]) => {
+      setBiz(b);
+      // catalogApi.getProducts() resolves to the raw backend array (the
+      // envelope's `data` is the array itself, not `{ products: [...] }`)
+      // — same shape as businesses/nearby. Guard with Array.isArray in case
+      // that ever changes server-side.
+      setProducts(Array.isArray(p) ? p : p?.products || []);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [businessId]);
 
   const handleAddToCart = (product: any) => {
@@ -32,14 +40,16 @@ export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}><ArrowLeft color={theme.colors.text} size={24} /></TouchableOpacity>
-        <Text style={styles.headerTitle} numberOfLines={1}>{biz?.name || 'Business'}</Text>
-        <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>
-          <ShoppingCart color={theme.colors.primary} size={22} />
-          {itemCount > 0 && <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>{itemCount}</Text></View>}
-        </TouchableOpacity>
-      </View>
+      <AppHeader
+        variant="sub"
+        title={biz?.name || 'Business'}
+        rightSlot={
+          <TouchableOpacity style={styles.cartBtn} onPress={() => navigation.navigate('Cart')}>
+            <ShoppingCart color={theme.colors.primary} size={22} />
+            {itemCount > 0 && <View style={styles.cartBadge}><Text style={styles.cartBadgeText}>{itemCount}</Text></View>}
+          </TouchableOpacity>
+        }
+      />
       {loading ? (
         <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
       ) : (
@@ -90,9 +100,6 @@ export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: theme.spacing.md, paddingVertical: 12, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  backBtn: { padding: 6 },
-  headerTitle: { flex: 1, ...theme.typography.h3 },
   cartBtn: { position: 'relative', padding: 6 },
   cartBadge: { position: 'absolute', top: 0, right: 0, width: 18, height: 18, borderRadius: 9, backgroundColor: theme.colors.danger, justifyContent: 'center', alignItems: 'center' },
   cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800' },

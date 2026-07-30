@@ -15,7 +15,7 @@ import { MapPin, Car, Bike } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
-import { VoiceButton } from '../../components/VoiceButton';
+import { AppHeader } from '../../components/AppHeader';
 import { AppMapView } from '../../components/AppMapView';
 import { useAuthStore } from '../../store/authStore';
 import { useLocationStore } from '../../store/locationStore';
@@ -72,10 +72,12 @@ export const RideBookingScreen: React.FC<any> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}>
-        <Text style={styles.title}>Book a Ride</Text>
-        <VoiceButton text="Enter your pickup and drop location, then select vehicle type and book your ride." language={language} />
-      </View>
+      <AppHeader
+        variant="main"
+        voiceText="Enter your pickup and drop location, then select vehicle type and book your ride."
+        voiceLanguage={language}
+        onLocationPress={() => navigation.navigate('LocationPicker')}
+      />
 
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
         {/* Map — only rendered after location is available from global store */}
@@ -174,8 +176,6 @@ export const RideBookingScreen: React.FC<any> = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  title: { ...theme.typography.h2 },
   scroll: { padding: theme.spacing.md },
   mapContainer: { width: '100%', height: 200, borderRadius: theme.radius.xl, overflow: 'hidden', marginBottom: theme.spacing.xl, borderWidth: 1, borderColor: theme.colors.border },
   map: { width: '100%', height: '100%' },

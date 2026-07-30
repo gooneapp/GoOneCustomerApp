@@ -4,6 +4,7 @@ import { Clock, Package } from 'lucide-react-native';
 import { theme } from '../../theme/theme';
 import { ordersApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { AppHeader } from '../../components/AppHeader';
 const STATUS_COLORS: any = { placed: theme.colors.warning, accepted: theme.colors.primary, preparing: theme.colors.secondary, out_for_delivery: theme.colors.info, completed: theme.colors.success, cancelled: theme.colors.danger };
 export const MyOrdersScreen: React.FC<any> = ({ navigation }) => {
   const [orders, setOrders] = useState<any[]>([]);
@@ -13,7 +14,7 @@ export const MyOrdersScreen: React.FC<any> = ({ navigation }) => {
   useEffect(() => { fetchOrders(); }, []);
   return (
     <SafeAreaView style={styles.safe}><StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <View style={styles.header}><Text style={styles.title}>My Orders</Text></View>
+      <AppHeader variant="sub" title="My Orders" />
       {loading ? <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View> : (
         <FlatList data={orders} keyExtractor={(i) => i.id} contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchOrders(); }} colors={[theme.colors.primary]} />}
@@ -40,8 +41,6 @@ export const MyOrdersScreen: React.FC<any> = ({ navigation }) => {
 };
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
-  header: { paddingHorizontal: theme.spacing.lg, paddingVertical: theme.spacing.md, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border, ...theme.shadows.sm },
-  title: { ...theme.typography.h2 },
   list: { padding: theme.spacing.md, gap: 12 },
   card: { flexDirection: 'row', backgroundColor: theme.colors.surface, borderRadius: theme.radius.lg, padding: 16, borderWidth: 1, borderColor: theme.colors.border, ...theme.shadows.sm },
   businessName: { ...theme.typography.h4, marginBottom: 4 },
