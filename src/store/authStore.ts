@@ -3,7 +3,7 @@
  */
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setTokens, clearTokens, setOnAuthExpired } from '../api/client';
+import { setTokens, clearTokens, setOnAuthExpired, authApi } from '../api/client';
 
 export interface User { id: string; name: string; phone: string; preferred_language: 'ta' | 'en' | 'hi'; }
 
@@ -27,7 +27,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = userStr[1] ? JSON.parse(userStr[1]) : null;
       if (at[1] && rt[1] && user) {
         setTokens(at[1], rt[1]);
-        set({ user, isAuthenticated: true, language: (lang[1] as any) || 'en', isLoading: false });
+        const finalLang = user.preferred_language || lang[1] || 'en';
+        set({ user, isAuthenticated: true, language: (finalLang as any), isLoading: false });
+        if (finalLang !== lang[1]) await AsyncStorage.setItem('language', finalLang);
       } else {
         set({ isLoading: false, language: (lang[1] as any) || 'en' });
       }
@@ -36,13 +38,24 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   loginSuccess: async (user, at, rt) => {
     setTokens(at, rt);
-    await AsyncStorage.multiSet([['access_token', at], ['refresh_token', rt], ['user', JSON.stringify(user)]]);
-    set({ user, isAuthenticated: true });
+    const finalLang = user.preferred_language || 'en';
+    await AsyncStorage.multiSet([
+      ['access_token', at], 
+      ['refresh_token', rt], 
+      ['user', JSON.stringify(user)],
+      ['language', finalLang]
+    ]);
+    set({ user, isAuthenticated: true, language: finalLang as any });
   },
 
   setLanguage: async (lang) => {
     await AsyncStorage.setItem('language', lang);
     set({ language: lang });
+    // Sync with backend if logged in
+    const state = useAuthStore.getState();
+    if (state.isAuthenticated && state.user) {
+      authApi.updateLanguage(lang).catch(err => console.error('Failed to sync language:', err));
+    }
   },
 
   logout: async () => {

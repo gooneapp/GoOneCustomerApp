@@ -8,6 +8,7 @@ import { authApi } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import { Speakable } from '../../components/Speakable';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Eye, EyeOff } from 'lucide-react-native';
 import type { AuthStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<AuthStackParamList, 'SetPassword'>;
@@ -21,6 +22,8 @@ export const SetPasswordScreen: React.FC<Props> = ({ route, navigation }) => {
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const { language, loginSuccess } = useAuthStore();
@@ -47,8 +50,30 @@ export const SetPasswordScreen: React.FC<Props> = ({ route, navigation }) => {
           <Speakable text="Create your account" textStyle={styles.title} containerStyle={styles.titleRow} language={language} />
           <Text style={styles.sub}>Set your name and a secure password</Text>
           <Input label="Your Name" placeholder="Full name" value={name} onChangeText={setName} error={errors.name} />
-          <Input label="Password" placeholder="Min 6 characters" secureTextEntry value={password} onChangeText={setPassword} error={errors.password} />
-          <Input label="Confirm Password" placeholder="Re-enter password" secureTextEntry value={confirm} onChangeText={setConfirm} error={errors.confirm} />
+          <Input 
+            label="Password" 
+            placeholder="Min 6 characters" 
+            secureTextEntry={!showPassword} 
+            value={password} 
+            onChangeText={setPassword} 
+            error={errors.password} 
+            autoCapitalize="none"
+            autoCorrect={false}
+            rightIcon={showPassword ? <EyeOff color={theme.colors.textLight} size={20} /> : <Eye color={theme.colors.textLight} size={20} />}
+            onRightIconPress={() => setShowPassword(!showPassword)}
+          />
+          <Input 
+            label="Confirm Password" 
+            placeholder="Re-enter password" 
+            secureTextEntry={!showConfirm} 
+            value={confirm} 
+            onChangeText={setConfirm} 
+            error={errors.confirm} 
+            autoCapitalize="none"
+            autoCorrect={false}
+            rightIcon={showConfirm ? <EyeOff color={theme.colors.textLight} size={20} /> : <Eye color={theme.colors.textLight} size={20} />}
+            onRightIconPress={() => setShowConfirm(!showConfirm)}
+          />
           <Button title={loading ? '' : 'Create Account'} onPress={handleSet} loading={loading} size="large" fullWidth />
         </View>
       </KeyboardAvoidingView>

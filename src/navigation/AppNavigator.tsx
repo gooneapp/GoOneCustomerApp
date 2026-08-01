@@ -12,11 +12,12 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Home, ShoppingBag, Car, Wallet } from 'lucide-react-native';
+import { Home, ShoppingBag, Car, BookOpen } from 'lucide-react-native';
 
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
 import { useNotificationStore } from '../store/notificationStore';
+import { useTranslation, type TranslationKey } from '../utils/i18n';
 
 // ── Auth
 import { SplashScreen } from '../screens/SplashScreen';
@@ -47,7 +48,7 @@ import { MyOrdersScreen } from '../screens/Orders/MyOrdersScreen';
 import { OrderTrackingScreen } from '../screens/Orders/OrderTrackingScreen';
 
 // ── Credit/Wallet Tab
-import { WalletScreen } from '../screens/Wallet/WalletScreen';
+import { NotesScreen } from '../screens/Notes/NotesScreen';
 import { ExpenseTrackerScreen } from '../screens/Wallet/ExpenseTrackerScreen';
 
 // ── Profile
@@ -117,6 +118,7 @@ const HomeNavigator = () => (
 const ShopNavigator = () => (
   <ShopStack.Navigator screenOptions={stackOptions}>
     <ShopStack.Screen name="Shop" component={ShopScreen} />
+    <ShopStack.Screen name="Profile" component={ProfileScreen} />
     <ShopStack.Screen name="BusinessDetail" component={BusinessDetailScreen} />
     <ShopStack.Screen name="Cart" component={CartScreen} />
     <ShopStack.Screen name="Checkout" component={CheckoutScreen} />
@@ -129,6 +131,7 @@ const ShopNavigator = () => (
 const RidesNavigator = () => (
   <RidesStack.Navigator screenOptions={stackOptions}>
     <RidesStack.Screen name="RideBooking" component={RideBookingScreen} />
+    <RidesStack.Screen name="Profile" component={ProfileScreen} />
     <RidesStack.Screen name="RideTracking" component={RideTrackingScreen} />
     <RidesStack.Screen name="RideHistory" component={RideHistoryScreen} />
     <RidesStack.Screen name="LocationPicker" component={LocationPickerScreen} />
@@ -139,36 +142,41 @@ const RidesNavigator = () => (
 
 const WalletNavigator = () => (
   <WalletStack.Navigator screenOptions={stackOptions}>
-    <WalletStack.Screen name="Wallet" component={WalletScreen} />
+    <WalletStack.Screen name="Wallet" component={NotesScreen} />
+    <WalletStack.Screen name="Profile" component={ProfileScreen} />
     <WalletStack.Screen name="ExpenseTracker" component={ExpenseTrackerScreen} />
     <WalletStack.Screen name="LocationPicker" component={LocationPickerScreen} />
     <WalletStack.Screen name="Notifications" component={NotificationsScreen} />
   </WalletStack.Navigator>
 );
 
-const TABS = [
-  { name: 'HomeTab', label: 'Home', Icon: Home, navigator: HomeNavigator },
-  { name: 'ShopTab', label: 'Shop', Icon: ShoppingBag, navigator: ShopNavigator },
-  { name: 'RidesTab', label: 'Rides', Icon: Car, navigator: RidesNavigator },
-  { name: 'WalletTab', label: 'Wallet', Icon: Wallet, navigator: WalletNavigator },
+const TABS: Array<{ name: string; labelKey: TranslationKey; Icon: any; navigator: React.ComponentType }> = [
+  { name: 'HomeTab', labelKey: 'home', Icon: Home, navigator: HomeNavigator },
+  { name: 'ShopTab', labelKey: 'shop', Icon: ShoppingBag, navigator: ShopNavigator },
+  { name: 'RidesTab', labelKey: 'rides', Icon: Car, navigator: RidesNavigator },
+  { name: 'WalletTab', labelKey: 'notes', Icon: BookOpen, navigator: WalletNavigator },
 ];
 
-const GoOneTabBar = ({ state, navigation }: any) => (
-  <View style={tabStyles.bar}>
-    {TABS.map((tab, idx) => {
-      const focused = state.index === idx;
-      const Icon = tab.Icon;
-      return (
-        <TouchableOpacity key={tab.name} style={tabStyles.item} onPress={() => navigation.navigate(tab.name)}>
-          <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
-            <Icon color={focused ? theme.colors.primary : theme.colors.textLight} size={22} />
-          </View>
-          <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{tab.label}</Text>
-        </TouchableOpacity>
-      );
-    })}
-  </View>
-);
+const GoOneTabBar = ({ state, navigation }: any) => {
+  const { t } = useTranslation();
+  
+  return (
+    <View style={tabStyles.bar}>
+      {TABS.map((tab, idx) => {
+        const focused = state.index === idx;
+        const Icon = tab.Icon;
+        return (
+          <TouchableOpacity key={tab.name} style={tabStyles.item} onPress={() => navigation.navigate(tab.name)}>
+            <View style={[tabStyles.iconWrap, focused && tabStyles.iconWrapActive]}>
+              <Icon color={focused ? theme.colors.primary : theme.colors.textLight} size={22} />
+            </View>
+            <Text style={[tabStyles.label, focused && tabStyles.labelActive]}>{t(tab.labelKey)}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
 
 const tabStyles = StyleSheet.create({
   bar: { flexDirection: 'row', backgroundColor: theme.colors.surface, borderTopWidth: 1, borderTopColor: theme.colors.border, paddingVertical: 8, ...theme.shadows.md },

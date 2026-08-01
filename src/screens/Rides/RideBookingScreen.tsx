@@ -25,6 +25,7 @@ import { AppMapView } from '../../components/AppMapView';
 import { PickupOptionsSheet } from '../../components/PickupOptionsSheet';
 import { Speakable } from '../../components/Speakable';
 import { useLocationStore } from '../../store/locationStore';
+import { useRideStore } from '../../store/rideStore';
 import { rideApi, EstimateFareRequest, RideEstimate } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { RidesStackParamList } from '../../navigation/types';
@@ -42,14 +43,10 @@ type Props = NativeStackScreenProps<RidesStackParamList, 'RideBooking'>;
 export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
   // Read location from global store — never request here
   const { location: userLocation, address: userAddress, isLoading: locationLoading, error: locationError, permissionStatus } = useLocationStore();
+  const { pickup, dropoff, estimate, selectedVehicle, setPickup, setDropoff, setEstimate, setSelectedVehicle } = useRideStore();
+  const vehicleType = (selectedVehicle || 'auto') as 'auto' | 'car';
 
   const [pickupMode, setPickupMode] = useState<'auto' | 'custom'>('auto');
-  const [pickup, setPickup] = useState('');
-  const [pickupCoords, setPickupCoords] = useState<Coords | null>(null);
-  const [dropoff, setDropoff] = useState('');
-  const [dropCoords, setDropCoords] = useState<Coords | null>(null);
-  const [vehicleType, setVehicleType] = useState<'auto' | 'car'>('auto');
-  const [estimate, setEstimate] = useState<RideEstimate | null>(null);
   const [estimating, setEstimating] = useState(false);
   const [booking, setBooking] = useState(false);
   const [showPickupSheet, setShowPickupSheet] = useState(false);
@@ -66,40 +63,33 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
   useEffect(() => {
     const dropoffParam = route.params?.dropoff;
     if (dropoffParam) {
-      setDropoff(dropoffParam.address);
-      setDropCoords({ lat: dropoffParam.lat, lng: dropoffParam.lng });
-      setEstimate(null);
+      setDropoff({ address: dropoffParam.address, lat: dropoffParam.lat, lng: dropoffParam.lng });
       navigation.setParams({ dropoff: undefined });
     }
-  }, [route.params?.dropoff, navigation]);
+  }, [route.params?.dropoff, navigation, setDropoff]);
 
-  // Same hand-off, for pickup (Search / Map Selection options in PickupOptionsSheet).
   useEffect(() => {
     const pickupParam = route.params?.pickup;
     if (pickupParam) {
       setPickupMode('custom');
-      setPickup(pickupParam.address);
-      setPickupCoords({ lat: pickupParam.lat, lng: pickupParam.lng });
-      setEstimate(null);
+      setPickup({ address: pickupParam.address, lat: pickupParam.lat, lng: pickupParam.lng });
       navigation.setParams({ pickup: undefined });
     }
-  }, [route.params?.pickup, navigation]);
+  }, [route.params?.pickup, navigation, setPickup]);
 
-  // Auto-detect mode mirrors the global location store's resolved
-  // address/coordinate — only while pickupMode is 'auto', so a Search/Map
-  // selection isn't silently overwritten the next time GPS updates.
   useEffect(() => {
     if (pickupMode === 'auto') {
-      if (userAddress) setPickup(userAddress);
-      if (userLocation) setPickupCoords(userLocation);
+      if (userAddress && userLocation) {
+        setPickup({ address: userAddress, lat: userLocation.lat, lng: userLocation.lng });
+      }
     }
-  }, [pickupMode, userAddress, userLocation]);
+  }, [pickupMode, userAddress, userLocation, setPickup]);
 
   const handleAutoDetect = () => {
     setPickupMode('auto');
-    if (userAddress) setPickup(userAddress);
-    if (userLocation) setPickupCoords(userLocation);
-    setEstimate(null);
+    if (userAddress && userLocation) {
+      setPickup({ address: userAddress, lat: userLocation.lat, lng: userLocation.lng });
+    }
     setShowPickupSheet(false);
   };
 
@@ -147,7 +137,7 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
   };
 
   const handleEstimate = async () => {
-    if (!pickupCoords || !dropCoords) {
+    if (!pickup || !dropoff) {
       Alert.alert('Missing Location', 'Please set a pickup and drop-off location.');
       return;
     }
@@ -159,10 +149,10 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       const payload: EstimateFareRequest = {
         vehicle_type: vehicleType,
-        pickup_lat: pickupCoords.lat,
-        pickup_lng: pickupCoords.lng,
-        drop_lat: dropCoords.lat,
-        drop_lng: dropCoords.lng,
+        pickup_lat: pickup.lat,
+        pickup_lng: pickup.lng,
+        drop_lat: dropoff.lat,
+        drop_lng: dropoff.lng,
       };
       const data = await rideApi.estimateFare(payload);
       setEstimate(data);
@@ -173,7 +163,7 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
 
   const handleBook = async () => {
     if (!estimate) { handleEstimate(); return; }
-    if (!pickupCoords || !dropCoords) {
+    if (!pickup || !dropoff) {
       Alert.alert('Missing Location', 'Please set a pickup and drop-off location.');
       return;
     }
@@ -185,10 +175,10 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
     try {
       const payload: EstimateFareRequest = {
         vehicle_type: vehicleType,
-        pickup_lat: pickupCoords.lat,
-        pickup_lng: pickupCoords.lng,
-        drop_lat: dropCoords.lat,
-        drop_lng: dropCoords.lng,
+        pickup_lat: pickup.lat,
+        pickup_lng: pickup.lng,
+        drop_lat: dropoff.lat,
+        drop_lng: dropoff.lng,
         booking_type: bookingType,
         scheduled_at: bookingType === 'scheduled' ? scheduledAt!.toISOString() : undefined,
       };
@@ -211,25 +201,22 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
     } finally { setBooking(false); }
   };
 
-  const mapRegion = pickupCoords ? {
-    latitude: dropCoords ? (pickupCoords.lat + dropCoords.lat) / 2 : pickupCoords.lat,
-    longitude: dropCoords ? (pickupCoords.lng + dropCoords.lng) / 2 : pickupCoords.lng,
-    latitudeDelta: dropCoords ? Math.max(0.02, Math.abs(pickupCoords.lat - dropCoords.lat) * 1.8) : 0.02,
-    longitudeDelta: dropCoords ? Math.max(0.02, Math.abs(pickupCoords.lng - dropCoords.lng) * 1.8) : 0.02,
+  const mapRegion = pickup ? {
+    latitude: dropoff ? (pickup.lat + dropoff.lat) / 2 : pickup.lat,
+    longitude: dropoff ? (pickup.lng + dropoff.lng) / 2 : pickup.lng,
+    latitudeDelta: dropoff ? Math.max(0.02, Math.abs(pickup.lat - dropoff.lat) * 1.8) : 0.02,
+    longitudeDelta: dropoff ? Math.max(0.02, Math.abs(pickup.lng - dropoff.lng) * 1.8) : 0.02,
   } : undefined;
 
   const mapMarkers = [
-    ...(pickupCoords ? [{ lat: pickupCoords.lat, lng: pickupCoords.lng, title: 'Pickup', color: theme.colors.success }] : []),
-    ...(dropCoords ? [{ lat: dropCoords.lat, lng: dropCoords.lng, title: 'Drop-off', color: theme.colors.danger }] : []),
+    ...(pickup ? [{ lat: pickup.lat, lng: pickup.lng, title: 'Pickup', color: theme.colors.success }] : []),
+    ...(dropoff ? [{ lat: dropoff.lat, lng: dropoff.lng, title: 'Drop-off', color: theme.colors.danger }] : []),
   ];
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
-      <AppHeader
-        variant="main"
-        onLocationPress={() => navigation.navigate('LocationPicker')}
-      />
+      <AppHeader variant="main" title="Book a Ride" />
 
       <View style={styles.actionsRow}>
         <Speakable text="Book a Ride" textStyle={styles.actionsTitle} />
@@ -262,8 +249,8 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
               activeOpacity={0.7}
               onPress={() => setShowPickupSheet(true)}
             >
-              <Text style={pickup ? styles.dropoffText : styles.dropoffPlaceholder} numberOfLines={1}>
-                {pickup || 'Set pickup location'}
+              <Text style={pickup?.address ? styles.dropoffText : styles.dropoffPlaceholder} numberOfLines={1}>
+                {pickup?.address || 'Set pickup location'}
               </Text>
               <ChevronRight color={theme.colors.textLight} size={16} />
             </TouchableOpacity>
@@ -276,8 +263,8 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
               activeOpacity={0.7}
               onPress={() => navigation.navigate('LocationPicker', { returnTo: { screen: 'RideBooking', field: 'dropoff' } })}
             >
-              <Text style={dropoff ? styles.dropoffText : styles.dropoffPlaceholder} numberOfLines={1}>
-                {dropoff || 'Drop-off location'}
+              <Text style={dropoff?.address ? styles.dropoffText : styles.dropoffPlaceholder} numberOfLines={1}>
+                {dropoff?.address || 'Drop-off location'}
               </Text>
               <ChevronRight color={theme.colors.textLight} size={16} />
             </TouchableOpacity>
@@ -291,7 +278,7 @@ export const RideBookingScreen: React.FC<Props> = ({ navigation, route }) => {
             <TouchableOpacity
               key={v.key}
               style={[styles.vehicleCard, vehicleType === v.key && styles.vehicleCardActive]}
-              onPress={() => { setVehicleType(v.key); setEstimate(null); }}
+              onPress={() => setSelectedVehicle(v.key)}
               activeOpacity={0.85}
             >
               <Text style={{ fontSize: 32, marginBottom: 8 }}>{v.emoji}</Text>

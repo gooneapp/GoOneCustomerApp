@@ -29,7 +29,7 @@ export const OtpVerifyScreen: React.FC<Props> = ({ route, navigation }) => {
     if (joined.length < 6) { setError('Enter the 6-digit OTP'); return; }
     setLoading(true);
     try {
-      const res = await authApi.verifyOtp(phone, joined, 'registration');
+      const res = await authApi.verifyOtp(phone, joined, 'signup');
       if (res.setup_token) navigation.navigate('SetPassword', { phone, setup_token: res.setup_token });
       else if (res.access_token) navigation.navigate('Consent');
     } catch (e: any) {
@@ -40,7 +40,7 @@ export const OtpVerifyScreen: React.FC<Props> = ({ route, navigation }) => {
     <SafeAreaView style={styles.safe}>
       <View style={styles.container}>
         <Speakable text="Enter OTP" textStyle={styles.title} containerStyle={styles.titleRow} />
-        <Text style={styles.sub}>Sent to {phone}</Text>
+        <Text style={styles.sub}>Sent to +91 {phone}</Text>
         <View style={styles.otpRow}>
           {otp.map((d, i) => (
             <TextInput key={i} ref={(r) => { inputs.current[i] = r; }} style={[styles.otpBox, d && styles.otpBoxFilled]} value={d} onChangeText={(v) => set(i, v)} keyboardType="number-pad" maxLength={1} autoFocus={i===0} />
@@ -48,7 +48,7 @@ export const OtpVerifyScreen: React.FC<Props> = ({ route, navigation }) => {
         </View>
         {error ? <Text style={styles.err}>{error}</Text> : null}
         <Button title={loading ? '' : 'Verify OTP'} onPress={handleVerify} loading={loading} size="large" fullWidth style={{ marginTop: 24 }} />
-        <TouchableOpacity onPress={() => authApi.requestOtp(phone, 'registration')}><Text style={styles.resend}>Resend OTP</Text></TouchableOpacity>
+        <TouchableOpacity onPress={() => authApi.requestOtp(phone, 'signup')}><Text style={styles.resend}>Resend OTP</Text></TouchableOpacity>
       </View>
     </SafeAreaView>
   );

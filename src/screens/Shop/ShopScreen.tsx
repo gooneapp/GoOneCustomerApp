@@ -23,6 +23,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { useLocationStore } from '../../store/locationStore';
 import { emojiForCategory } from '../../utils/categoryEmoji';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation, type TranslationKey } from '../../utils/i18n';
 import type { ShopStackParamList } from '../../navigation/types';
 
 interface Category {
@@ -31,26 +32,26 @@ interface Category {
   emoji: string;
 }
 
-const ALL_CATEGORY: Category = { id: 'all', name: 'All', emoji: '🏪' };
-
 // Used only if catalogApi.getCategories() fails — keeps the chip row from
 // disappearing entirely. These ids are not real backend UUIDs, so a filter
 // selection made while running on this fallback will not match real
 // business rows; that's an acceptable degradation versus no chips at all.
-const FALLBACK_CATEGORIES: Category[] = [
-  { id: 'grocery', name: 'Grocery', emoji: '🛒' },
-  { id: 'restaurant', name: 'Food', emoji: '🍱' },
-  { id: 'medical', name: 'Medical', emoji: '💊' },
-  { id: 'milk_water', name: 'Milk/Water', emoji: '🥛' },
-  { id: 'farmer', name: 'Farmer', emoji: '🌾' },
-  { id: 'service', name: 'Services', emoji: '✂️' },
-];
 
 type Props = NativeStackScreenProps<ShopStackParamList, 'Shop'>;
 
 export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
   // Read location from global store — never request here
   const { location: userLocation, isLoading: locationLoading, error: locationError, permissionStatus } = useLocationStore();
+  const { t } = useTranslation();
+
+  const FALLBACK_CATEGORIES: Category[] = [
+    { id: 'grocery', name: t('cat_grocery'), emoji: '🛒' },
+    { id: 'restaurant', name: t('cat_food'), emoji: '🍱' },
+    { id: 'medical', name: t('cat_medical'), emoji: '💊' },
+    { id: 'milk_water', name: t('cat_milk_water'), emoji: '🥛' },
+    { id: 'farmer', name: t('cat_farmer'), emoji: '🌾' },
+    { id: 'service', name: t('cat_services'), emoji: '✂️' },
+  ];
 
   const [categories, setCategories] = useState<Category[]>(FALLBACK_CATEGORIES);
   const [businesses, setBusinesses] = useState<any[]>([]);
@@ -101,28 +102,29 @@ export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
     ? businesses.filter((b) => (b.name || '').toLowerCase().includes(search.trim().toLowerCase()))
     : businesses;
 
+  const ALL_CATEGORY: Category = { id: 'all', name: t('cat_all'), emoji: '🏪' };
   const chips = [ALL_CATEGORY, ...categories];
 
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
 
-      <AppHeader variant="main" onLocationPress={() => navigation.navigate('LocationPicker')} />
+      <AppHeader variant="main" title={t('shops_services')} />
 
       <View style={styles.viewToggleRow}>
         <TouchableOpacity style={[styles.viewToggleBtn, viewMode === 'list' && styles.viewToggleBtnActive]} onPress={() => setViewMode('list')}>
           <ListIcon color={viewMode === 'list' ? '#fff' : theme.colors.textMuted} size={16} />
-          <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>List</Text>
+          <Text style={[styles.viewToggleText, viewMode === 'list' && styles.viewToggleTextActive]}>{t('list_view')}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.viewToggleBtn, viewMode === 'map' && styles.viewToggleBtnActive]} onPress={() => setViewMode('map')}>
           <MapIcon color={viewMode === 'map' ? '#fff' : theme.colors.textMuted} size={16} />
-          <Text style={[styles.viewToggleText, viewMode === 'map' && styles.viewToggleTextActive]}>Map</Text>
+          <Text style={[styles.viewToggleText, viewMode === 'map' && styles.viewToggleTextActive]}>{t('map_view')}</Text>
         </TouchableOpacity>
       </View>
 
       <View style={styles.searchBar}>
         <Input
-          placeholder="Search stores, products..."
+          placeholder={t('search_stores')}
           value={search}
           onChangeText={setSearch}
           leftIcon={<Search color={theme.colors.textMuted} size={18} />}
@@ -136,6 +138,7 @@ export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         keyExtractor={(i) => i.id}
+        style={{ flexGrow: 0 }}
         contentContainerStyle={styles.catFilter}
         renderItem={({ item }) => (
           <TouchableOpacity
@@ -154,8 +157,8 @@ export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
         ) : (
           <EmptyState
             icon="📍"
-            title={permissionStatus === 'denied' || permissionStatus === 'blocked' ? 'Location access needed' : 'Waiting for location'}
-            subtitle="We need your location to show nearby businesses."
+            title={permissionStatus === 'denied' || permissionStatus === 'blocked' ? t('location_needed') : t('waiting_location')}
+            subtitle={t('location_desc')}
           />
         )
       ) : loading ? (
@@ -163,9 +166,9 @@ export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
       ) : error ? (
         <EmptyState
           icon="⚠️"
-          title="Couldn't load businesses"
+          title={t('couldnt_load_biz')}
           subtitle={error}
-          ctaLabel="Retry"
+          ctaLabel={t('retry')}
           onCtaPress={fetchBusinesses}
         />
       ) : viewMode === 'map' ? (
@@ -236,7 +239,7 @@ export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   searchBar: { padding: theme.spacing.md },
-  catFilter: { paddingHorizontal: theme.spacing.md, paddingBottom: 12, gap: 8 },
+  catFilter: { paddingHorizontal: theme.spacing.md, paddingBottom: 12, gap: 8, alignItems: 'center' },
   catChip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.full, borderWidth: 1.5, borderColor: theme.colors.border, backgroundColor: theme.colors.surface },
   catChipActive: { backgroundColor: theme.colors.primary, borderColor: theme.colors.primary },
   catEmoji: { fontSize: 14 },

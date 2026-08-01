@@ -19,8 +19,8 @@ export const OtpRequestScreen: React.FC<Props> = ({ navigation }) => {
     if (phone.length !== 10) { setError('Enter a valid 10-digit number'); return; }
     setLoading(true);
     try {
-      await authApi.requestOtp(phone, 'registration');
-      navigation.navigate('OtpVerify', { phone: `+91${phone}` });
+      await authApi.requestOtp(phone, 'signup');
+      navigation.navigate('OtpVerify', { phone });
     } catch (e: any) {
       const msg = e?.response?.data?.error?.message || '';
       if (msg.includes('exists') || e?.response?.status === 409) {

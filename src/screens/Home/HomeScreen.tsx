@@ -22,6 +22,7 @@ import { AppMapView } from '../../components/AppMapView';
 import { Speakable, SpeakerIcon } from '../../components/Speakable';
 import { emojiForCategory } from '../../utils/categoryEmoji';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from '../../utils/i18n';
 import type { HomeStackParamList } from '../../navigation/types';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
@@ -45,6 +46,7 @@ export const HomeScreen: React.FC<Props> = (props) => {
   const [loadingBiz, setLoadingBiz] = useState(false);
   const [bizError, setBizError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
+  const { t } = useTranslation();
 
   // Request location permission HERE — HomeScreen has no MapView, so
   // no Google Maps Fragment transaction conflict can occur.
@@ -84,15 +86,12 @@ export const HomeScreen: React.FC<Props> = (props) => {
     <SafeAreaView style={styles.safe}>
       <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
 
-      <AppHeader
-        variant="main"
-        onLocationPress={() => navigation.navigate('LocationPicker')}
-      />
+      <AppHeader variant="main" title="Home" />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Greeting Line */}
-        <Text style={styles.name}>{user?.name?.split(' ')[0] || 'Welcome'}</Text>
-        <Speakable text="What would you like to do?" textStyle={styles.subHead} />
+        <Text style={styles.name}>{user?.name?.split(' ')[0] || t('welcome_back')}</Text>
+        <Speakable text={t('what_would_you_like_to_do')} textStyle={styles.subHead} />
 
         {/* TWO BIG SELECTION CARDS */}
         <View style={styles.twoCards}>
@@ -101,16 +100,16 @@ export const HomeScreen: React.FC<Props> = (props) => {
             style={[styles.bigCard, styles.shopCard]}
             onPress={handleShopSelect}
             activeOpacity={0.88}
-            accessibilityLabel="Shop Local"
+            accessibilityLabel={t('shop_local')}
           >
             <View style={styles.cardIconBg}>
               <ShoppingBag color="#fff" size={36} />
             </View>
             <View style={styles.bigCardTitleRow}>
-              <Text style={styles.bigCardTitle}>Shop Local</Text>
-              <SpeakerIcon text="Shop Local. Order from stores, restaurants and farms near you." color="#fff" />
+              <Text style={styles.bigCardTitle}>{t('shop_local')}</Text>
+              <SpeakerIcon text={t('shop_local')} color="#fff" />
             </View>
-            <Text style={styles.bigCardSub}>Order from stores, restaurants & farms near you</Text>
+            <Text style={styles.bigCardSub}>{t('shop_local_desc')}</Text>
             <View style={styles.cardArrow}>
               <Text style={styles.cardArrowText}>Explore →</Text>
             </View>
@@ -121,16 +120,16 @@ export const HomeScreen: React.FC<Props> = (props) => {
             style={[styles.bigCard, styles.rideCard]}
             onPress={handleRideSelect}
             activeOpacity={0.88}
-            accessibilityLabel="Book a Ride"
+            accessibilityLabel={t('book_ride')}
           >
             <View style={[styles.cardIconBg, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
               <Car color="#fff" size={36} />
             </View>
             <View style={styles.bigCardTitleRow}>
-              <Text style={styles.bigCardTitle}>Book a Ride</Text>
-              <SpeakerIcon text="Book a Ride. Auto, bike taxi, or cab, wherever you need to go." color="#fff" />
+              <Text style={styles.bigCardTitle}>{t('book_ride')}</Text>
+              <SpeakerIcon text={t('book_ride')} color="#fff" />
             </View>
-            <Text style={styles.bigCardSub}>Auto, bike taxi, or cab — wherever you need to go</Text>
+            <Text style={styles.bigCardSub}>{t('book_a_ride_desc')}</Text>
             <View style={styles.cardArrow}>
               <Text style={styles.cardArrowText}>Book Now →</Text>
             </View>

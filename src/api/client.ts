@@ -4,7 +4,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const BASE_URL = __DEV__
+// Exported so components can build direct file URLs for <Image source>, which
+// needs a URL plus an Authorization header rather than going through axios.
+export const BASE_URL = __DEV__
   ? 'http://localhost:4000/api/v1'
   : 'https://api.goone.tech/api/v1';
 
@@ -75,7 +77,48 @@ export const authApi = {
   setPassword: (setup_token: string, password: string, name: string, preferred_language: string) => req<any>({ method: 'POST', url: '/auth/set-password', data: { setup_token, password, name, preferred_language } }),
   login: (phone_number: string, password: string) => req<any>({ method: 'POST', url: '/auth/login', data: { phone_number, password } }),
   recordConsent: (document_type: string, version: string) => req<any>({ method: 'POST', url: '/auth/consent', data: { document_type, version } }),
+  updateLanguage: (language: string) => req<any>({ method: 'PATCH', url: '/auth/language', data: { language } }),
   logout: () => api.post('/auth/logout'),
+};
+
+export const filesApi = {
+  upload: async (fileUri: string, mimeType: string, fileName: string, purpose: string) => {
+    const formData = new FormData();
+    // @ts-ignore - React Native's FormData accepts an object with uri, type, and name
+    formData.append('file', {
+      uri: fileUri,
+      type: mimeType,
+      name: fileName,
+    });
+    formData.append('purpose', purpose);
+
+    const r = await api.post('/files', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return r.data.data as { id: string; url?: string };
+  },
+};
+
+export interface MeResponse {
+  id: string;
+  phone_number: string;
+  name: string | null;
+  preferred_language: 'ta' | 'en' | 'hi';
+  is_verified: boolean;
+  /** Private file — render with an Authorization header, see components/ProfilePhoto. */
+  profile_photo_file_id: string | null;
+}
+
+export const usersApi = {
+  me: () => req<MeResponse>({ method: 'GET', url: '/users/me' }),
+  /** `file_id` comes from POST /api/v1/files with purpose `profile_photo`. */
+  setProfilePhoto: (fileId: string) =>
+    req<{ profile_photo_file_id: string }>({
+      method: 'PATCH',
+      url: '/users/me/profile-photo',
+      data: { file_id: fileId },
+    }),
+  removeProfilePhoto: () => api.delete('/users/me/profile-photo'),
 };
 
 // Reshapes the real backend business row — camelCase fields + nested
@@ -272,6 +315,41 @@ export const rideApi = {
     req<RideRequestDto>({ method: 'PATCH', url: `/rides/requests/${requestId}/cancel`, data: { reason } }),
   listHistory: (params?: { limit?: number }) =>
     req<RideRequestDto[]>({ method: 'GET', url: '/rides/history', params }),
+};
+
+// --- Notes API ---
+export interface NoteItem {
+  id?: string;
+  content: string;
+  isDone?: boolean;
+  sortOrder?: number;
+}
+
+export interface Note {
+  id: string;
+  userId: string;
+  businessId?: string | null;
+  title?: string | null;
+  content?: string | null;
+  color?: string | null;
+  labels?: string[] | null;
+  isPinned: boolean;
+  isArchived: boolean;
+  isFavorite: boolean;
+  sortOrder: number;
+  reminderDate?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: NoteItem[];
+}
+
+export const notesApi = {
+  list: (businessId?: string) => req<Note[]>({ method: 'GET', url: '/notes', params: businessId ? { businessId } : undefined }),
+  get: (id: string) => req<Note>({ method: 'GET', url: `/notes/${id}` }),
+  create: (data: Partial<Note>) => req<Note>({ method: 'POST', url: '/notes', data }),
+  update: (id: string, data: Partial<Note>) => req<Note>({ method: 'PUT', url: `/notes/${id}`, data }),
+  delete: (id: string) => req<{ success: boolean }>({ method: 'DELETE', url: `/notes/${id}` }),
+  duplicate: (id: string) => req<Note>({ method: 'POST', url: `/notes/${id}/duplicate` }),
 };
 
 export default api;

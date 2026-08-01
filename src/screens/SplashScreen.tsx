@@ -8,6 +8,7 @@ import {
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
+import { useTranslation } from '../utils/i18n';
 import type { RootStackParamList } from '../navigation/types';
 
 const { width, height } = Dimensions.get('window');
@@ -17,6 +18,7 @@ type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
 
 export const SplashScreen: React.FC<Props> = ({ navigation }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
+  const { t } = useTranslation();
 
   const logoScale  = useRef(new Animated.Value(0.7)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
@@ -64,8 +66,8 @@ export const SplashScreen: React.FC<Props> = ({ navigation }) => {
 
       {/* Tagline */}
       <Animated.View style={{ opacity: tagOpacity, alignItems: 'center' }}>
-        <Text style={styles.tagline}>Customer App</Text>
-        <Text style={styles.subTagline}>Shop Local • Book Rides • Track Orders</Text>
+        <Text style={styles.tagline}>{t('customer_app')}</Text>
+        <Text style={styles.subTagline}>{t('splash_subtagline')}</Text>
       </Animated.View>
 
       {/* Loading dots */}

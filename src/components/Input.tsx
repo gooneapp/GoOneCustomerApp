@@ -22,12 +22,15 @@ interface InputProps {
   multiline?: boolean;
   numberOfLines?: number;
   editable?: boolean;
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters';
+  autoCorrect?: boolean;
 }
 
 export const Input: React.FC<InputProps> = ({
   label, placeholder, value, onChangeText, error, keyboardType,
   secureTextEntry, maxLength, containerStyle, leftIcon, rightIcon,
   onRightIconPress, autoFocus, multiline, numberOfLines, editable = true,
+  autoCapitalize, autoCorrect,
 }) => (
   <View style={[styles.container, containerStyle]}>
     {label ? <Text style={styles.label}>{label}</Text> : null}
@@ -46,6 +49,8 @@ export const Input: React.FC<InputProps> = ({
         multiline={multiline}
         numberOfLines={numberOfLines}
         editable={editable}
+        autoCapitalize={autoCapitalize}
+        autoCorrect={autoCorrect}
       />
       {rightIcon ? (
         <TouchableOpacity style={styles.rightIconWrap} onPress={onRightIconPress}>

@@ -233,6 +233,13 @@ For architectural decisions, see the [ADR index](../goone-docs/architecture/ADR.
 
 Design assets and UI mockups are available on Figma: [GoOne Customer App Designs](https://www.figma.com/GoOne-Customer-App-Designs) (TODO link). The public website and admin panel designs are in the same workspace.
 
+## Local
+
+```
+adb reverse tcp:8081 tcp:8081
+adb reverse tcp:4000 tcp:4000
+```
+
 ---
 
 *End of Customer App README — tailored to mobile frontend with React Native.*  

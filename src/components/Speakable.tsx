@@ -24,7 +24,7 @@ export async function speakText(text: string, language: 'ta' | 'en' | 'hi' = 'en
     }
     // Some devices lack the exact locale pack — swallow and fall back to
     // whatever default voice is already active rather than blocking speech.
-    await Tts.setDefaultLanguage(LOCALE_MAP[language] ?? 'en-IN').catch(() => {});
+    await Tts.setDefaultLanguage(LOCALE_MAP[language] ?? 'en-IN').catch(() => { });
     Tts.stop();
     Tts.speak(text);
   } catch {

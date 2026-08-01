@@ -34,6 +34,12 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>GoOne uses your camera so you can take a profile photo.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>GoOne needs access to your photos so you can choose a profile picture.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>GoOne saves photos you capture in the app to your photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>GoOne uses your location to show nearby shops and estimate ride pickup times.</string>
 	<key>UILaunchStoryboardName</key>
