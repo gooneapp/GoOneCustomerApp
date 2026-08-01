@@ -1,12 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Plus, Minus, ShoppingCart } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { useCartStore } from '../../store/cartStore';
 import { Button } from '../../components/Button';
+import { Speakable } from '../../components/Speakable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
-export const CartScreen: React.FC<any> = ({ navigation }) => {
+import type { ShopStackParamList } from '../../navigation/types';
+
+type Props = NativeStackScreenProps<ShopStackParamList, 'Cart'>;
+
+export const CartScreen: React.FC<Props> = ({ navigation }) => {
   const { items, businessName, total, updateQty, clearCart } = useCartStore();
   return (
     <SafeAreaView style={styles.safe}>
@@ -18,7 +24,7 @@ export const CartScreen: React.FC<any> = ({ navigation }) => {
       {items.length === 0 ? (
         <View style={styles.empty}>
           <ShoppingCart color={theme.colors.textLight} size={60} />
-          <Text style={styles.emptyTitle}>Your cart is empty</Text>
+          <Speakable text="Your cart is empty" textStyle={styles.emptyTitle} />
           <Button title="Browse Stores" onPress={() => navigation.navigate('Shop')} style={{ marginTop: 16 }} />
         </View>
       ) : (

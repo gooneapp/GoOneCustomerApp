@@ -1,7 +1,10 @@
 /**
  * GoOne Customer App — Root Navigator
  * Home uses TWO-CARD selection (Shop Local / Book a Ride) as requested.
- * 4-tab bottom bar: Home, Orders, My Rides, Credit/Wallet
+ * 4-tab bottom bar: Home, Shop, Rides, Wallet. There is no dedicated
+ * "Orders" tab — MyOrders/OrderTracking are registered inside HomeStack
+ * (and OrderTracking additionally in ShopStack, since Checkout lives there),
+ * the same per-tab-stack pattern already used for LocationPicker/Notifications.
  */
 
 import React, { useEffect } from 'react';
@@ -30,7 +33,6 @@ import { HomeScreen } from '../screens/Home/HomeScreen';
 // ── Shop Tab
 import { ShopScreen } from '../screens/Shop/ShopScreen';
 import { BusinessDetailScreen } from '../screens/Shop/BusinessDetailScreen';
-import { ProductDetailScreen } from '../screens/Shop/ProductDetailScreen';
 import { CartScreen } from '../screens/Shop/CartScreen';
 import { CheckoutScreen } from '../screens/Shop/CheckoutScreen';
 
@@ -39,7 +41,8 @@ import { RideBookingScreen } from '../screens/Rides/RideBookingScreen';
 import { RideTrackingScreen } from '../screens/Rides/RideTrackingScreen';
 import { RideHistoryScreen } from '../screens/Rides/RideHistoryScreen';
 
-// ── Orders Tab
+// ── Orders (no dedicated tab — registered in HomeStack/ShopStack, see the
+// header comment above)
 import { MyOrdersScreen } from '../screens/Orders/MyOrdersScreen';
 import { OrderTrackingScreen } from '../screens/Orders/OrderTrackingScreen';
 
@@ -53,16 +56,26 @@ import { ProfileScreen } from '../screens/Profile/ProfileScreen';
 // ── Location + Notifications (registered on all 4 tab stacks — the
 // main-variant AppHeader on Home/Shop/Rides/Wallet is the entry point to both)
 import { LocationPickerScreen } from '../screens/Location/LocationPickerScreen';
+import { MapSelectionScreen } from '../screens/Location/MapSelectionScreen';
 import { NotificationsScreen } from '../screens/Notifications/NotificationsScreen';
 
-const RootStack = createNativeStackNavigator();
-const AuthStack = createNativeStackNavigator();
-const Tab = createBottomTabNavigator();
-const HomeStack = createNativeStackNavigator();
-const ShopStack = createNativeStackNavigator();
-const RidesStack = createNativeStackNavigator();
-const OrdersStack = createNativeStackNavigator();
-const WalletStack = createNativeStackNavigator();
+import type {
+  RootStackParamList,
+  AuthStackParamList,
+  MainTabParamList,
+  HomeStackParamList,
+  ShopStackParamList,
+  RidesStackParamList,
+  WalletStackParamList,
+} from './types';
+
+const RootStack = createNativeStackNavigator<RootStackParamList>();
+const AuthStack = createNativeStackNavigator<AuthStackParamList>();
+const Tab = createBottomTabNavigator<MainTabParamList>();
+const HomeStack = createNativeStackNavigator<HomeStackParamList>();
+const ShopStack = createNativeStackNavigator<ShopStackParamList>();
+const RidesStack = createNativeStackNavigator<RidesStackParamList>();
+const WalletStack = createNativeStackNavigator<WalletStackParamList>();
 
 const navTheme = {
   ...DefaultTheme,
@@ -96,6 +109,8 @@ const HomeNavigator = () => (
     <HomeStack.Screen name="Profile" component={ProfileScreen} />
     <HomeStack.Screen name="LocationPicker" component={LocationPickerScreen} />
     <HomeStack.Screen name="Notifications" component={NotificationsScreen} />
+    <HomeStack.Screen name="MyOrders" component={MyOrdersScreen} />
+    <HomeStack.Screen name="OrderTracking" component={OrderTrackingScreen} />
   </HomeStack.Navigator>
 );
 
@@ -103,11 +118,11 @@ const ShopNavigator = () => (
   <ShopStack.Navigator screenOptions={stackOptions}>
     <ShopStack.Screen name="Shop" component={ShopScreen} />
     <ShopStack.Screen name="BusinessDetail" component={BusinessDetailScreen} />
-    <ShopStack.Screen name="ProductDetail" component={ProductDetailScreen} />
     <ShopStack.Screen name="Cart" component={CartScreen} />
     <ShopStack.Screen name="Checkout" component={CheckoutScreen} />
     <ShopStack.Screen name="LocationPicker" component={LocationPickerScreen} />
     <ShopStack.Screen name="Notifications" component={NotificationsScreen} />
+    <ShopStack.Screen name="OrderTracking" component={OrderTrackingScreen} />
   </ShopStack.Navigator>
 );
 
@@ -117,15 +132,9 @@ const RidesNavigator = () => (
     <RidesStack.Screen name="RideTracking" component={RideTrackingScreen} />
     <RidesStack.Screen name="RideHistory" component={RideHistoryScreen} />
     <RidesStack.Screen name="LocationPicker" component={LocationPickerScreen} />
+    <RidesStack.Screen name="MapSelection" component={MapSelectionScreen} />
     <RidesStack.Screen name="Notifications" component={NotificationsScreen} />
   </RidesStack.Navigator>
-);
-
-const OrdersNavigator = () => (
-  <OrdersStack.Navigator screenOptions={stackOptions}>
-    <OrdersStack.Screen name="MyOrders" component={MyOrdersScreen} />
-    <OrdersStack.Screen name="OrderTracking" component={OrderTrackingScreen} />
-  </OrdersStack.Navigator>
 );
 
 const WalletNavigator = () => (

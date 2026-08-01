@@ -20,14 +20,12 @@ import { theme } from '../theme/theme';
 import { useLocationStore } from '../store/locationStore';
 import { useNotificationStore } from '../store/notificationStore';
 import { useAuthStore } from '../store/authStore';
-import { VoiceButton } from './VoiceButton';
+import { SpeakerIcon } from './Speakable';
 
 interface AppHeaderProps {
   variant: 'main' | 'sub';
   // variant="main"
   onLocationPress?: () => void;
-  voiceText?: string;
-  voiceLanguage?: 'ta' | 'en' | 'hi';
   // variant="sub"
   title?: string;
   onBack?: () => void;
@@ -37,8 +35,6 @@ interface AppHeaderProps {
 export const AppHeader: React.FC<AppHeaderProps> = ({
   variant,
   onLocationPress,
-  voiceText,
-  voiceLanguage,
   title,
   onBack,
   rightSlot,
@@ -55,32 +51,34 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         >
           <ArrowLeft color={theme.colors.text} size={22} />
         </TouchableOpacity>
-        <Text style={styles.title} numberOfLines={1}>
-          {title}
-        </Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={1}>
+            {title}
+          </Text>
+          {title ? <SpeakerIcon text={title} size={14} /> : null}
+        </View>
         {rightSlot ?? <View style={styles.balanceSpacer} />}
       </View>
     );
   }
 
-  return (
-    <MainHeader
-      onLocationPress={onLocationPress}
-      voiceText={voiceText}
-      voiceLanguage={voiceLanguage}
-      navigation={navigation}
-    />
-  );
+  return <MainHeader onLocationPress={onLocationPress} navigation={navigation} />;
 };
 
 interface MainHeaderProps {
   onLocationPress?: () => void;
-  voiceText?: string;
-  voiceLanguage?: 'ta' | 'en' | 'hi';
   navigation: any;
 }
 
-const MainHeader: React.FC<MainHeaderProps> = ({ onLocationPress, voiceText, voiceLanguage, navigation }) => {
+// Keeps the header from stretching into a second line on a long address —
+// first segment (street/landmark) is what's actually useful at a glance;
+// the rest is still reachable by tapping through to the full picker.
+function shortenLocation(address: string): string {
+  const firstSegment = address.split(',')[0]?.trim() || address;
+  return firstSegment.length > 28 ? `${firstSegment.slice(0, 27)}…` : firstSegment;
+}
+
+const MainHeader: React.FC<MainHeaderProps> = ({ onLocationPress, navigation }) => {
   const { address, isLoading, permissionStatus } = useLocationStore();
   const unreadCount = useNotificationStore((s) => s.unreadCount);
   const { user } = useAuthStore();
@@ -88,7 +86,7 @@ const MainHeader: React.FC<MainHeaderProps> = ({ onLocationPress, voiceText, voi
   const locationLabel = isLoading
     ? 'Locating…'
     : address
-    ? address
+    ? shortenLocation(address)
     : permissionStatus === 'denied' || permissionStatus === 'blocked'
     ? 'Enable location'
     : 'Select location';
@@ -108,8 +106,6 @@ const MainHeader: React.FC<MainHeaderProps> = ({ onLocationPress, voiceText, voi
       </TouchableOpacity>
 
       <View style={styles.rightGroup}>
-        {voiceText ? <VoiceButton text={voiceText} language={voiceLanguage} size={20} /> : null}
-
         <TouchableOpacity
           style={styles.iconBtn}
           onPress={() => navigation.navigate('Notifications')}
@@ -149,12 +145,23 @@ const styles = StyleSheet.create({
   },
   // — sub variant —
   backBtn: { padding: 8 },
-  title: { ...theme.typography.h3, flex: 1, textAlign: 'center' },
+  titleRow: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  title: { ...theme.typography.h3, flexShrink: 1, textAlign: 'center' },
   balanceSpacer: { width: 24 },
   // — main variant —
-  logo: { width: 32, height: 32, marginRight: 10 },
-  locationBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 4 },
-  locationText: { fontSize: 14, fontWeight: '700', color: theme.colors.text, flexShrink: 1 },
+  logo: { width: 30, height: 30, marginRight: 10 },
+  locationBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginRight: theme.spacing.sm,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: theme.radius.full,
+    backgroundColor: theme.colors.surfaceAlt,
+  },
+  locationText: { fontSize: 13, fontWeight: '700', color: theme.colors.text, flexShrink: 1 },
   rightGroup: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   iconBtn: { padding: 4 },
   badge: {

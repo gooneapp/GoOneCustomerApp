@@ -1,14 +1,27 @@
 import React from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, Alert } from 'react-native';
-import { User, LogOut, Settings, Globe } from 'lucide-react-native';
+import { LogOut, Globe, Package } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { useAuthStore } from '../../store/authStore';
 import { authApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
-export const ProfileScreen: React.FC<any> = () => {
-  const { user, language, logout } = useAuthStore();
+import type { HomeStackParamList } from '../../navigation/types';
+
+type Props = NativeStackScreenProps<HomeStackParamList, 'Profile'>;
+
+export const ProfileScreen: React.FC<Props> = ({ navigation }) => {
+  const { user, logout, setLanguage } = useAuthStore();
   const handleLogout = async () => { try { await authApi.logout(); } catch {} await logout(); };
+  const handleLanguage = () => {
+    Alert.alert('Language & Voice', 'Choose your language', [
+      { text: 'தமிழ் (Tamil)', onPress: () => setLanguage('ta') },
+      { text: 'English', onPress: () => setLanguage('en') },
+      { text: 'हिन्दी (Hindi)', onPress: () => setLanguage('hi') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
   return (
     <SafeAreaView style={styles.safe}><StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
       <AppHeader variant="sub" title="Profile" />
@@ -18,8 +31,8 @@ export const ProfileScreen: React.FC<any> = () => {
         <Text style={styles.phone}>{user?.phone}</Text>
         <View style={styles.menuCard}>
           {[
-            { label: 'Language & Voice', Icon: Globe, onPress: () => {} },
-            { label: 'Account Settings', Icon: Settings, onPress: () => {} },
+            { label: 'Language & Voice', Icon: Globe, onPress: handleLanguage },
+            { label: 'My Orders', Icon: Package, onPress: () => navigation.navigate('MyOrders') },
           ].map((item) => {
             const Icon = item.Icon;
             return (

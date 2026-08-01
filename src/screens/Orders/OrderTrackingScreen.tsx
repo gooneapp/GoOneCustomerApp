@@ -1,25 +1,63 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, Alert } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { Button } from '../../components/Button';
+import { LoadingView } from '../../components/LoadingView';
+import { EmptyState } from '../../components/EmptyState';
 import { ordersApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
+import type { ShopStackParamList } from '../../navigation/types';
 const STEPS = ['placed','accepted','preparing','out_for_delivery','completed'];
-export const OrderTrackingScreen: React.FC<any> = ({ route, navigation }) => {
+type Props = NativeStackScreenProps<ShopStackParamList, 'OrderTracking'>;
+export const OrderTrackingScreen: React.FC<Props> = ({ route, navigation }) => {
   const { orderId } = route.params || {};
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  // Only the initial load's failure surfaces a full error state — a
+  // transient failed poll tick every 15s shouldn't flash an error banner
+  // over an already-loaded screen.
+  const [error, setError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
-    ordersApi.getById(orderId).then(setOrder).catch(() => {}).finally(() => setLoading(false));
-    const t = setInterval(() => ordersApi.getById(orderId).then(setOrder).catch(() => {}), 15000);
-    return () => clearInterval(t);
-  }, [orderId]);
+    let isMounted = true;
+    setLoading(true);
+    setError(null);
+
+    const fetchOrder = (isInitial: boolean) => {
+      ordersApi.getById(orderId)
+        .then((data) => {
+          if (!isMounted) return;
+          setOrder(data);
+          if (isInitial) setError(null);
+        })
+        .catch(() => {
+          if (!isMounted) return;
+          if (isInitial) setError('Unable to load this order. Please try again.');
+        })
+        .finally(() => {
+          if (!isMounted) return;
+          if (isInitial) setLoading(false);
+        });
+    };
+
+    fetchOrder(true);
+    const t = setInterval(() => fetchOrder(false), 15000);
+    return () => {
+      isMounted = false;
+      clearInterval(t);
+    };
+  }, [orderId, reloadKey]);
   const currentStep = STEPS.indexOf(order?.status);
+  const retryInitialLoad = () => setReloadKey((k) => k + 1);
   return (
     <SafeAreaView style={styles.safe}>
       <AppHeader variant="sub" title="Track Order" />
-      {loading ? <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View> : (
+      {loading ? <LoadingView /> : error ? (
+        <EmptyState icon="⚠️" title="Something went wrong" subtitle={error} ctaLabel="Retry" onCtaPress={retryInitialLoad} />
+      ) : (
         <View style={styles.content}>
           <Text style={styles.orderId}>Order #{order?.id?.slice(-6).toUpperCase()}</Text>
           <Text style={styles.bizName}>{order?.business_name || 'Business'}</Text>
@@ -54,5 +92,4 @@ const styles = StyleSheet.create({
   lineDone: { backgroundColor: theme.colors.primary },
   stepLabel: { fontSize: 13, fontWeight: '600', color: theme.colors.textLight, paddingBottom: 28 },
   stepLabelActive: { color: theme.colors.primary, fontWeight: '800' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

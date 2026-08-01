@@ -16,10 +16,20 @@ import { LoadingView } from '../../components/LoadingView';
 import { EmptyState } from '../../components/EmptyState';
 import { placesApi } from '../../api/client';
 import { useLocationStore } from '../../store/locationStore';
+import type { LocationPickerParams } from '../../navigation/types';
 
 interface Prediction {
   placeId: string;
   description: string;
+}
+
+// This screen is registered identically on all 4 tab stacks (Home/Shop/
+// Rides/Wallet) and can `navigate()` both to an arbitrary caller-supplied
+// screen (via `returnTo`) and cross-navigator to the Home tab — neither fits
+// a single stack's strict NativeStackNavigationProp, so only `route` (the
+// one thing whose shape is genuinely fixed here) is typed.
+interface LocationPickerRoute {
+  params?: LocationPickerParams;
 }
 
 const DEBOUNCE_MS = 400;
@@ -29,7 +39,7 @@ const DEBOUNCE_MS = 400;
 // billed by Google as a single search session instead of per-request.
 const genSessionToken = () => `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 
-export const LocationPickerScreen: React.FC<any> = ({ navigation }) => {
+export const LocationPickerScreen: React.FC<{ navigation: any; route: LocationPickerRoute }> = ({ navigation, route }) => {
   const [query, setQuery] = useState('');
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -75,8 +85,22 @@ export const LocationPickerScreen: React.FC<any> = ({ navigation }) => {
   const handleSelect = async (prediction: Prediction) => {
     try {
       const result = await placesApi.details(prediction.placeId, sessionTokenRef.current);
-      setManualLocation({ lat: result.lat, lng: result.lng, address: result.formattedAddress });
-      navigation.goBack();
+      // When pushed with a `returnTo: {screen, field}` param, hand the picked
+      // coordinates back to that arbitrary calling screen via navigate
+      // instead of writing through the global location store — lets callers
+      // like Ride Booking / Checkout capture a location (e.g. drop-off,
+      // delivery address) without disturbing the app-wide "current location"
+      // used by Home/Shop/Rides/Wallet's AppHeader. Default (no returnTo) is
+      // unchanged: write to locationStore and go back, exactly as before.
+      const returnTo = route?.params?.returnTo;
+      if (returnTo) {
+        navigation.navigate(returnTo.screen, {
+          [returnTo.field]: { address: result.formattedAddress, lat: result.lat, lng: result.lng },
+        });
+      } else {
+        setManualLocation({ lat: result.lat, lng: result.lng, address: result.formattedAddress });
+        navigation.goBack();
+      }
     } catch {
       setSearchError('Unable to load that location. Please try another.');
     }

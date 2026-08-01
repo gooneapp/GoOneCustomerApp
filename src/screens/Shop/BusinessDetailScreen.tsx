@@ -2,34 +2,52 @@
  * GoOne Customer App — Business Detail Screen
  * Shows products, hours, info, add to cart.
  */
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList, ActivityIndicator, Alert } from 'react-native';
 import { ShoppingCart, Star, Clock, MapPin } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { catalogApi } from '../../api/client';
 import { useCartStore } from '../../store/cartStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
+import { EmptyState } from '../../components/EmptyState';
+import type { ShopStackParamList } from '../../navigation/types';
 
-export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
+type Props = NativeStackScreenProps<ShopStackParamList, 'BusinessDetail'>;
+
+export const BusinessDetailScreen: React.FC<Props> = ({ route, navigation }) => {
   const { businessId } = route.params || {};
   const [biz, setBiz] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { addItem, itemCount } = useCartStore();
 
-  useEffect(() => {
-    Promise.all([
-      catalogApi.getBusinessDetail(businessId),
-      catalogApi.getProducts(businessId),
-    ]).then(([b, p]) => {
+  const fetchData = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      const [b, p] = await Promise.all([
+        catalogApi.getBusinessDetail(businessId),
+        catalogApi.getProducts(businessId),
+      ]);
       setBiz(b);
       // catalogApi.getProducts() resolves to the raw backend array (the
       // envelope's `data` is the array itself, not `{ products: [...] }`)
       // — same shape as businesses/nearby. Guard with Array.isArray in case
       // that ever changes server-side.
       setProducts(Array.isArray(p) ? p : p?.products || []);
-    }).catch(() => {}).finally(() => setLoading(false));
+    } catch {
+      setError('Unable to load this business. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessId]);
 
   const handleAddToCart = (product: any) => {
@@ -52,6 +70,8 @@ export const BusinessDetailScreen: React.FC<any> = ({ route, navigation }) => {
       />
       {loading ? (
         <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View>
+      ) : error ? (
+        <EmptyState icon="⚠️" title="Something went wrong" subtitle={error} ctaLabel="Retry" onCtaPress={fetchData} />
       ) : (
         <FlatList
           data={products}

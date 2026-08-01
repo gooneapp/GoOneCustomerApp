@@ -1,13 +1,23 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { authApi } from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
+import { Speakable } from '../../components/Speakable';
 import { SafeAreaView } from 'react-native-safe-area-context';
-export const SetPasswordScreen: React.FC<any> = ({ route, navigation }) => {
-  const { phone, setup_token } = route.params || {};
+import type { AuthStackParamList } from '../../navigation/types';
+
+type Props = NativeStackScreenProps<AuthStackParamList, 'SetPassword'>;
+
+export const SetPasswordScreen: React.FC<Props> = ({ route, navigation }) => {
+  // This screen is only ever reached via navigation.navigate('SetPassword',
+  // { phone, setup_token }) from OtpVerifyScreen — both are always supplied
+  // in practice even though the param-list types them optional to allow
+  // direct/deep-link navigation.
+  const { phone, setup_token } = (route.params || {}) as { phone: string; setup_token: string };
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -34,7 +44,7 @@ export const SetPasswordScreen: React.FC<any> = ({ route, navigation }) => {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={styles.container}>
-          <Text style={styles.title}>Create your account</Text>
+          <Speakable text="Create your account" textStyle={styles.title} containerStyle={styles.titleRow} language={language} />
           <Text style={styles.sub}>Set your name and a secure password</Text>
           <Input label="Your Name" placeholder="Full name" value={name} onChangeText={setName} error={errors.name} />
           <Input label="Password" placeholder="Min 6 characters" secureTextEntry value={password} onChangeText={setPassword} error={errors.password} />
@@ -48,6 +58,7 @@ export const SetPasswordScreen: React.FC<any> = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
   container: { flex: 1, padding: theme.spacing.xl, justifyContent: 'center' },
-  title: { fontSize: 26, fontWeight: '900', color: theme.colors.text, marginBottom: 8 },
+  title: { fontSize: 26, fontWeight: '900', color: theme.colors.text },
+  titleRow: { marginBottom: 8 },
   sub: { color: theme.colors.textMuted, marginBottom: theme.spacing.xl },
 });

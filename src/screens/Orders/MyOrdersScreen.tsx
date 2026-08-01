@@ -1,24 +1,42 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { Clock, Package } from 'lucide-react-native';
+import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { ordersApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
+import { LoadingView } from '../../components/LoadingView';
+import { EmptyState } from '../../components/EmptyState';
+import type { HomeStackParamList } from '../../navigation/types';
 const STATUS_COLORS: any = { placed: theme.colors.warning, accepted: theme.colors.primary, preparing: theme.colors.secondary, out_for_delivery: theme.colors.info, completed: theme.colors.success, cancelled: theme.colors.danger };
-export const MyOrdersScreen: React.FC<any> = ({ navigation }) => {
+type Props = NativeStackScreenProps<HomeStackParamList, 'MyOrders'>;
+export const MyOrdersScreen: React.FC<Props> = ({ navigation }) => {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const fetchOrders = async () => { try { const d = await ordersApi.listMine({ limit: 20 }); setOrders(d?.orders || []); } catch {} finally { setLoading(false); setRefreshing(false); } };
+  const [error, setError] = useState<string | null>(null);
+  const fetchOrders = async () => {
+    setError(null);
+    try {
+      const d = await ordersApi.listMine({ limit: 20 });
+      setOrders(d?.orders || []);
+    } catch {
+      setError('Unable to load your orders. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
   useEffect(() => { fetchOrders(); }, []);
   return (
     <SafeAreaView style={styles.safe}><StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
       <AppHeader variant="sub" title="My Orders" />
-      {loading ? <View style={styles.centered}><ActivityIndicator size="large" color={theme.colors.primary} /></View> : (
+      {loading ? <LoadingView /> : error ? (
+        <EmptyState icon="⚠️" title="Something went wrong" subtitle={error} ctaLabel="Retry" onCtaPress={fetchOrders} />
+      ) : (
         <FlatList data={orders} keyExtractor={(i) => i.id} contentContainerStyle={styles.list}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchOrders(); }} colors={[theme.colors.primary]} />}
-          ListEmptyComponent={<View style={styles.centered}><Package color={theme.colors.textLight} size={60} /><Text style={styles.emptyText}>No orders yet</Text><TouchableOpacity style={styles.shopBtn} onPress={() => navigation.navigate('ShopTab')}><Text style={styles.shopBtnText}>Start Shopping →</Text></TouchableOpacity></View>}
+          ListEmptyComponent={<EmptyState icon="📦" title="No orders yet" ctaLabel="Start Shopping →" onCtaPress={() => (navigation as any).navigate('ShopTab')} />}
           renderItem={({ item }) => (
             <TouchableOpacity style={styles.card} onPress={() => navigation.navigate('OrderTracking', { orderId: item.id })} activeOpacity={0.85}>
               <View style={{ flex: 1 }}>
@@ -50,8 +68,4 @@ const styles = StyleSheet.create({
   orderTotal: { fontSize: 18, fontWeight: '900', color: theme.colors.primary },
   badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 },
   badgeText: { fontSize: 10, fontWeight: '800' },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: theme.spacing.xl },
-  emptyText: { ...theme.typography.h3, marginTop: 16, marginBottom: 16 },
-  shopBtn: { backgroundColor: theme.colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: theme.radius.md },
-  shopBtnText: { color: '#fff', fontWeight: '700' },
 });

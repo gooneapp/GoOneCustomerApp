@@ -5,11 +5,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, StatusBar, FlatList, TouchableOpacity, Modal, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Plus, X, Trash2 } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { Button } from '../../components/Button';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
+import type { WalletStackParamList } from '../../navigation/types';
 const CATEGORIES = [
   { key: 'food', label: 'Food', emoji: '🍱' },
   { key: 'transport', label: 'Transport', emoji: '🚌' },
@@ -19,7 +21,11 @@ const CATEGORIES = [
   { key: 'other', label: 'Other', emoji: '📌' },
 ];
 const KEY = 'goone_customer_expenses';
-export const ExpenseTrackerScreen: React.FC<any> = () => {
+type Props = NativeStackScreenProps<WalletStackParamList, 'ExpenseTracker'>;
+
+// navigation/route are unused today (this screen has no outbound
+// navigation and no route params) — typed for signature consistency only.
+export const ExpenseTrackerScreen: React.FC<Props> = () => {
   const [expenses, setExpenses] = useState<any[]>([]);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm] = useState({ category: 'food', amount: '', note: '' });

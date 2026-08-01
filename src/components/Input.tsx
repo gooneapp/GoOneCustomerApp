@@ -34,7 +34,7 @@ export const Input: React.FC<InputProps> = ({
     <View style={[styles.inputWrap, error ? styles.inputWrapError : null, !editable && styles.inputWrapDisabled]}>
       {leftIcon ? <View style={styles.leftIconWrap}>{leftIcon}</View> : null}
       <TextInput
-        style={[styles.input, leftIcon && styles.inputWithLeft, multiline && styles.inputMultiline]}
+        style={[styles.input, !!leftIcon && styles.inputWithLeft, !!multiline && styles.inputMultiline]}
         placeholder={placeholder}
         placeholderTextColor={theme.colors.textLight}
         value={value}

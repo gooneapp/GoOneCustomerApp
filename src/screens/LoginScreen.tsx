@@ -4,13 +4,16 @@
 import React, { useState } from 'react';
 import {
   View, Text, StyleSheet, KeyboardAvoidingView,
-  Platform, TouchableOpacity, Image, Alert, ScrollView, Dimensions} from 'react-native';
+  Platform, TouchableOpacity, Image, ScrollView, Dimensions} from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../theme/theme';
 import { Input } from '../components/Input';
 import { Button } from '../components/Button';
 import { authApi } from '../api/client';
 import { useAuthStore } from '../store/authStore';
+import { Speakable } from '../components/Speakable';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { AuthStackParamList } from '../navigation/types';
 
 const { width } = Dimensions.get('window');
 const LOGO = require('../Logo.png');
@@ -20,7 +23,9 @@ const DEMO_PHONE = '8888888888';
 const DEMO_PASSWORD = 'password123';
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const LoginScreen: React.FC<any> = ({ navigation }) => {
+type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+
+export const LoginScreen: React.FC<Props> = ({ navigation }) => {
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -46,7 +51,10 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
         res.access_token,
         res.refresh_token,
       );
-      navigation.replace('Main');
+      // 'Main' lives in RootStackParamList, not AuthStackParamList — a
+      // deliberate cross-navigator jump to the parent RootStack (mirrors
+      // ConsentScreen's identical jump), outside this screen's typed nav prop.
+      (navigation as any).replace('Main');
     } catch (e: any) {
       console.log(`Error Message:-${e?.response?.data?.error}`);
 
@@ -71,7 +79,7 @@ export const LoginScreen: React.FC<any> = ({ navigation }) => {
           </View>
 
           {/* Header */}
-          <Text style={s.title}>Welcome Back!</Text>
+          <Speakable text="Welcome Back!" textStyle={s.title} containerStyle={s.titleRow} />
           <Text style={s.sub}>Sign in to your GoOne Customer account</Text>
 
           {/* Form */}
@@ -139,7 +147,8 @@ const s = StyleSheet.create({
   scroll: { flexGrow: 1, padding: theme.spacing.xl, alignItems: 'center' },
   logoWrap: { width: '100%', alignItems: 'center', marginTop: theme.spacing.lg, marginBottom: theme.spacing.sm },
   logo: { width: width * 0.65, height: 120 },
-  title: { fontSize: 26, fontWeight: '900', color: theme.colors.text, textAlign: 'center', marginBottom: 6 },
+  title: { fontSize: 26, fontWeight: '900', color: theme.colors.text },
+  titleRow: { marginBottom: 6 },
   sub: { color: theme.colors.textMuted, textAlign: 'center', marginBottom: theme.spacing.xl, fontSize: 14 },
   form: { width: '100%' },
   phoneRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: theme.spacing.md },

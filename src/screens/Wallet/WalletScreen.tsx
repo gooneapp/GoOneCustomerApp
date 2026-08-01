@@ -1,79 +1,47 @@
 /**
  * GoOne Customer App — Wallet / Credit Screen
- * Balance, transaction history, and Expense Tracker link.
+ * There is no backend wallet/credit concept (no route, no model) — per the
+ * plan's decision 1, this screen must be honest about that rather than fetch
+ * a dead `/customer/wallet` endpoint and show a fake ₹0 balance. The
+ * Expenses shortcut is kept — ExpenseTrackerScreen is correctly local-only
+ * (AsyncStorage), never backed by this API.
  */
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, StatusBar, TouchableOpacity, FlatList } from 'react-native';
-import { Wallet, TrendingDown, Plus } from 'lucide-react-native';
+import React from 'react';
+import { View, Text, StyleSheet, StatusBar, TouchableOpacity } from 'react-native';
+import { TrendingDown } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
-import { creditApi } from '../../api/client';
 import { AppHeader } from '../../components/AppHeader';
-import { LoadingView } from '../../components/LoadingView';
 import { EmptyState } from '../../components/EmptyState';
+import { Speakable } from '../../components/Speakable';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { WalletStackParamList } from '../../navigation/types';
 
-export const WalletScreen: React.FC<any> = ({ navigation }) => {
-  const [balance, setBalance] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+type Props = NativeStackScreenProps<WalletStackParamList, 'Wallet'>;
 
-  useEffect(() => {
-    creditApi.getBalance().then(setBalance).catch(() => setBalance({ balance: 0, transactions: [] })).finally(() => setLoading(false));
-  }, []);
+export const WalletScreen: React.FC<Props> = ({ navigation }) => (
+  <SafeAreaView style={styles.safe}>
+    <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar backgroundColor={theme.colors.surface} barStyle="dark-content" />
+    {/* variant="main" has no rightSlot — the Expenses shortcut is kept as
+        its own row below the header rather than dropped. */}
+    <AppHeader variant="main" onLocationPress={() => navigation.navigate('LocationPicker')} />
 
-      {/* variant="main" has no rightSlot — the Expenses shortcut is kept as
-          its own row below the header rather than dropped. */}
-      <AppHeader variant="main" onLocationPress={() => navigation.navigate('LocationPicker')} />
+    <View style={styles.actionsRow}>
+      <Speakable text="Wallet & Credits" textStyle={styles.actionsTitle} />
+      <TouchableOpacity style={styles.expenseBtn} onPress={() => navigation.navigate('ExpenseTracker')}>
+        <TrendingDown color={theme.colors.danger} size={18} />
+        <Text style={styles.expenseBtnText}>Expenses</Text>
+      </TouchableOpacity>
+    </View>
 
-      <View style={styles.actionsRow}>
-        <Text style={styles.actionsTitle}>Wallet & Credits</Text>
-        <TouchableOpacity style={styles.expenseBtn} onPress={() => navigation.navigate('ExpenseTracker')}>
-          <TrendingDown color={theme.colors.danger} size={18} />
-          <Text style={styles.expenseBtnText}>Expenses</Text>
-        </TouchableOpacity>
-      </View>
-
-      {loading ? (
-        <LoadingView />
-      ) : (
-        <FlatList
-          data={balance?.transactions || []}
-          keyExtractor={(i, idx) => i.id || idx.toString()}
-          ListHeaderComponent={
-            <View style={styles.balanceCard}>
-              <Wallet color={theme.colors.primary} size={36} />
-              <Text style={styles.balanceLabel}>GoOne Wallet Balance</Text>
-              <Text style={styles.balanceAmount}>₹{Number(balance?.balance || 0).toLocaleString('en-IN')}</Text>
-              <TouchableOpacity style={styles.addMoneyBtn}>
-                <Plus color="#fff" size={16} />
-                <Text style={styles.addMoneyText}>Add Money</Text>
-              </TouchableOpacity>
-            </View>
-          }
-          contentContainerStyle={styles.list}
-          ListEmptyComponent={<EmptyState icon="💰" title="No transactions yet" />}
-          renderItem={({ item }) => (
-            <View style={styles.txRow}>
-              <View style={[styles.txIcon, { backgroundColor: item.type === 'credit' ? theme.colors.successLight : theme.colors.dangerLight }]}>
-                <Text style={{ fontSize: 16 }}>{item.type === 'credit' ? '⬆️' : '⬇️'}</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.txLabel}>{item.description || 'Transaction'}</Text>
-                <Text style={styles.txDate}>{new Date(item.created_at).toLocaleDateString('en-IN')}</Text>
-              </View>
-              <Text style={[styles.txAmount, { color: item.type === 'credit' ? theme.colors.success : theme.colors.danger }]}>
-                {item.type === 'credit' ? '+' : '-'}₹{Number(item.amount).toLocaleString('en-IN')}
-              </Text>
-            </View>
-          )}
-        />
-      )}
-    </SafeAreaView>
-  );
-};
+    <EmptyState
+      icon="🚧"
+      title="Wallet coming soon"
+      subtitle="GoOne Wallet balance and credit tracking aren't available yet. Use Expenses to track your personal spending in the meantime."
+    />
+  </SafeAreaView>
+);
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },
@@ -81,15 +49,4 @@ const styles = StyleSheet.create({
   actionsTitle: { ...theme.typography.h2 },
   expenseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: theme.radius.md, borderWidth: 1.5, borderColor: theme.colors.dangerLight, backgroundColor: theme.colors.dangerLight },
   expenseBtnText: { color: theme.colors.danger, fontWeight: '700', fontSize: 13 },
-  list: { padding: theme.spacing.md },
-  balanceCard: { backgroundColor: theme.colors.primary, borderRadius: theme.radius.xl, padding: 28, alignItems: 'center', marginBottom: theme.spacing.xl, ...theme.shadows.primary },
-  balanceLabel: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '600', marginTop: 12 },
-  balanceAmount: { fontSize: 40, fontWeight: '900', color: '#fff', marginVertical: 8 },
-  addMoneyBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 20, paddingVertical: 10, borderRadius: theme.radius.full, marginTop: 8 },
-  addMoneyText: { color: '#fff', fontWeight: '700' },
-  txRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: theme.colors.borderLight },
-  txIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-  txLabel: { ...theme.typography.bodyMedium },
-  txDate: { ...theme.typography.caption, marginTop: 2 },
-  txAmount: { fontSize: 16, fontWeight: '800' },
 });

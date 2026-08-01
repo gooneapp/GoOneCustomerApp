@@ -5,13 +5,17 @@ import React, { useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet, Animated, Image, StatusBar, Dimensions,
 } from 'react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../theme/theme';
 import { useAuthStore } from '../store/authStore';
+import type { RootStackParamList } from '../navigation/types';
 
 const { width, height } = Dimensions.get('window');
 const LOGO = require('../Logo.png');
 
-export const SplashScreen: React.FC<any> = ({ navigation }) => {
+type Props = NativeStackScreenProps<RootStackParamList, 'Splash'>;
+
+export const SplashScreen: React.FC<Props> = ({ navigation }) => {
   const { isAuthenticated, isLoading } = useAuthStore();
 
   const logoScale  = useRef(new Animated.Value(0.7)).current;

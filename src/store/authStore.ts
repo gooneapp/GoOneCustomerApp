@@ -3,7 +3,7 @@
  */
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { setTokens, clearTokens } from '../api/client';
+import { setTokens, clearTokens, setOnAuthExpired } from '../api/client';
 
 export interface User { id: string; name: string; phone: string; preferred_language: 'ta' | 'en' | 'hi'; }
 
@@ -51,3 +51,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, isAuthenticated: false });
   },
 }));
+
+// Registered once at module load. A terminally-failed token refresh (expired
+// refresh token) already clears storage/memory tokens inside client.ts's
+// interceptor — this callback additionally resets the store's isAuthenticated
+// flag so the navigator actually bounces the user back to Login instead of
+// leaving them stuck on a dead screen silently 401ing forever.
+setOnAuthExpired(() => useAuthStore.setState({ user: null, isAuthenticated: false }));

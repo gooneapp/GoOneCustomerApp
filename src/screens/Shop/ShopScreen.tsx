@@ -12,6 +12,7 @@ import {
   FlatList, TouchableOpacity, RefreshControl,
 } from 'react-native';
 import { Search, Star, Clock, Map as MapIcon, List as ListIcon } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { Input } from '../../components/Input';
 import { catalogApi } from '../../api/client';
@@ -22,6 +23,7 @@ import { EmptyState } from '../../components/EmptyState';
 import { useLocationStore } from '../../store/locationStore';
 import { emojiForCategory } from '../../utils/categoryEmoji';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { ShopStackParamList } from '../../navigation/types';
 
 interface Category {
   id: string;
@@ -44,7 +46,9 @@ const FALLBACK_CATEGORIES: Category[] = [
   { id: 'service', name: 'Services', emoji: '✂️' },
 ];
 
-export const ShopScreen: React.FC<any> = ({ navigation, route }) => {
+type Props = NativeStackScreenProps<ShopStackParamList, 'Shop'>;
+
+export const ShopScreen: React.FC<Props> = ({ navigation, route }) => {
   // Read location from global store — never request here
   const { location: userLocation, isLoading: locationLoading, error: locationError, permissionStatus } = useLocationStore();
 

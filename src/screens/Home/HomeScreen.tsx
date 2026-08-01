@@ -10,6 +10,7 @@ import {
   TouchableOpacity, ScrollView,
 } from 'react-native';
 import { ShoppingBag, Car, Star, Clock, ChevronRight, Zap, Map as MapIcon, List as ListIcon } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { useAuthStore } from '../../store/authStore';
 import { useLocationStore } from '../../store/locationStore';
@@ -18,11 +19,21 @@ import { AppHeader } from '../../components/AppHeader';
 import { LoadingView } from '../../components/LoadingView';
 import { EmptyState } from '../../components/EmptyState';
 import { AppMapView } from '../../components/AppMapView';
+import { Speakable, SpeakerIcon } from '../../components/Speakable';
 import { emojiForCategory } from '../../utils/categoryEmoji';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { HomeStackParamList } from '../../navigation/types';
 
-export const HomeScreen: React.FC<any> = ({ navigation }) => {
-  const { user, language } = useAuthStore();
+type Props = NativeStackScreenProps<HomeStackParamList, 'Home'>;
+
+export const HomeScreen: React.FC<Props> = (props) => {
+  // Almost every navigate() call here targets a sibling tab (ShopTab/
+  // RidesTab), not a screen inside HomeStackParamList — those cross-navigator
+  // jumps fall outside this screen's own typed nav prop (same category of
+  // gap documented on LocationPickerScreen), so navigation is intentionally
+  // widened to `any` rather than casting at every call site below.
+  const navigation: any = props.navigation;
+  const { user } = useAuthStore();
   const {
     requestPermissionAndLocation,
     location,
@@ -40,10 +51,6 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
   useEffect(() => {
     requestPermissionAndLocation();
   }, [requestPermissionAndLocation]);
-
-  const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
-  const voiceText = `${greeting} ${user?.name?.split(' ')[0] || ''}. Welcome to GoOne. Choose Shop Local or Book a Ride to get started.`;
 
   const fetchBusinesses = useCallback(async () => {
     if (!location) return;
@@ -79,15 +86,13 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
 
       <AppHeader
         variant="main"
-        voiceText={voiceText}
-        voiceLanguage={language}
         onLocationPress={() => navigation.navigate('LocationPicker')}
       />
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {/* Greeting Line */}
         <Text style={styles.name}>{user?.name?.split(' ')[0] || 'Welcome'}</Text>
-        <Text style={styles.subHead}>What would you like to do?</Text>
+        <Speakable text="What would you like to do?" textStyle={styles.subHead} />
 
         {/* TWO BIG SELECTION CARDS */}
         <View style={styles.twoCards}>
@@ -101,7 +106,10 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
             <View style={styles.cardIconBg}>
               <ShoppingBag color="#fff" size={36} />
             </View>
-            <Text style={styles.bigCardTitle}>Shop Local</Text>
+            <View style={styles.bigCardTitleRow}>
+              <Text style={styles.bigCardTitle}>Shop Local</Text>
+              <SpeakerIcon text="Shop Local. Order from stores, restaurants and farms near you." color="#fff" />
+            </View>
             <Text style={styles.bigCardSub}>Order from stores, restaurants & farms near you</Text>
             <View style={styles.cardArrow}>
               <Text style={styles.cardArrowText}>Explore →</Text>
@@ -118,7 +126,10 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
             <View style={[styles.cardIconBg, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
               <Car color="#fff" size={36} />
             </View>
-            <Text style={styles.bigCardTitle}>Book a Ride</Text>
+            <View style={styles.bigCardTitleRow}>
+              <Text style={styles.bigCardTitle}>Book a Ride</Text>
+              <SpeakerIcon text="Book a Ride. Auto, bike taxi, or cab, wherever you need to go." color="#fff" />
+            </View>
             <Text style={styles.bigCardSub}>Auto, bike taxi, or cab — wherever you need to go</Text>
             <View style={styles.cardArrow}>
               <Text style={styles.cardArrowText}>Book Now →</Text>
@@ -155,13 +166,13 @@ export const HomeScreen: React.FC<any> = ({ navigation }) => {
           <Zap color={theme.colors.accent} size={20} />
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.offerTitle}>🎉 Special Offer</Text>
-            <Text style={styles.offerText}>Get 20% off on your first 3 orders from local stores!</Text>
+            <Speakable text="Get 20% off on your first 3 orders from local stores!" textStyle={styles.offerText} numberOfLines={2} />
           </View>
         </View>
 
         {/* Nearby Businesses */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Nearby Businesses</Text>
+          <Speakable text="Nearby Businesses" textStyle={styles.sectionTitle} />
           <TouchableOpacity onPress={() => navigation.navigate('ShopTab')}>
             <Text style={styles.viewAll}>View All →</Text>
           </TouchableOpacity>
@@ -282,7 +293,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
     marginBottom: 16,
   },
-  bigCardTitle: { fontSize: 20, fontWeight: '900', color: '#fff', marginBottom: 8 },
+  bigCardTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+  bigCardTitle: { fontSize: 20, fontWeight: '900', color: '#fff' },
   bigCardSub: { fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 18, marginBottom: 16 },
   cardArrow: { backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, alignSelf: 'flex-start' },
   cardArrowText: { color: '#fff', fontWeight: '700', fontSize: 13 },

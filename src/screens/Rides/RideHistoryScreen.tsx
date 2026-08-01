@@ -1,14 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
 import { Car } from 'lucide-react-native';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { theme } from '../../theme/theme';
 import { rideApi } from '../../api/client';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppHeader } from '../../components/AppHeader';
-export const RideHistoryScreen: React.FC<any> = () => {
+import type { RidesStackParamList } from '../../navigation/types';
+
+type Props = NativeStackScreenProps<RidesStackParamList, 'RideHistory'>;
+
+// NOTE: kept as `any[]` rather than `RideRequestDto[]` — the JSX below reads
+// pickup_address/dropoff_address/fare/created_at fields that don't exist on
+// the current RideRequestDto contract (id/status/vehicle_type/coords only).
+// That's a real backend response-shape gap, out of scope for this pass (the
+// plan only asked to confirm listHistory's top-level array-vs-wrapper shape,
+// which already matches); flagging here rather than silently typing over it.
+export const RideHistoryScreen: React.FC<Props> = () => {
   const [rides, setRides] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  useEffect(() => { rideApi.listHistory({ limit: 20 }).then((d) => setRides(d?.rides || [])).catch(() => setRides([])).finally(() => setLoading(false)); }, []);
+  // listHistory now resolves the array directly (RideRequestDto[]), not a
+  // { rides: [...] } wrapper.
+  useEffect(() => { rideApi.listHistory({ limit: 20 }).then((d) => setRides(d || [])).catch(() => setRides([])).finally(() => setLoading(false)); }, []);
   return (
     <SafeAreaView style={styles.safe}>
       <AppHeader variant="sub" title="Ride History" />
