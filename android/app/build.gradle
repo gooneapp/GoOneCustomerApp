@@ -63,7 +63,17 @@ react {
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
+
+/**
+ * Release APKs only ever run on real phones/tablets, never on the x86(_64) emulator
+ * images, so building those ABIs into the release artifact is pure dead weight.
+ * reactNativeArchitectures in gradle.properties already limits which native libs
+ * get compiled; this list drives per-ABI APK splitting for direct/sideload
+ * distribution (Play Store instead receives the .aab from bundleRelease, which
+ * performs its own per-device delivery regardless of this list).
+ */
+def abiCodes = ['armeabi-v7a': 1, 'arm64-v8a': 2]
 
 /**
  * The preferred build flavor of JavaScriptCore (JSC)
@@ -91,6 +101,12 @@ android {
         versionCode 1
         versionName "1.0"
         manifestPlaceholders = [MAPS_API_KEY: localProperties.getProperty('MAPS_API_KEY', '')]
+        // The app's own UI strings are driven by a JS-side dictionary (src/utils/i18n.ts),
+        // not Android resource localization, so only the base (English) copies of
+        // AndroidX/Play Services' own strings (permission dialogs, date pickers, etc.)
+        // are needed here -- the other ~70 bundled translations of those libraries'
+        // strings are dead weight in every build.
+        resConfigs "en"
     }
     signingConfigs {
         debug {
@@ -109,7 +125,40 @@ android {
             // see https://reactnative.dev/docs/signed-apk-android.
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+    splits {
+        abi {
+            reset()
+            enable true
+            // No universal fallback: it would silently re-bundle every ABI (defeating
+            // the split) and isn't needed since Play Store ships the .aab (bundleRelease)
+            // and direct/sideload installs use the matching per-ABI APK below.
+            universalApk false
+            include "armeabi-v7a", "arm64-v8a"
+        }
+    }
+    packagingOptions {
+        resources {
+            excludes += [
+                "META-INF/DEPENDENCIES", "META-INF/LICENSE", "META-INF/LICENSE.txt",
+                "META-INF/license.txt", "META-INF/NOTICE", "META-INF/NOTICE.txt",
+                "META-INF/notice.txt", "META-INF/*.kotlin_module"
+            ]
+        }
+    }
+}
+
+// Assign a distinct versionCode per split APK so all of them (including the
+// universal fallback) remain independently, monotonically installable/upgradable.
+android.applicationVariants.all { variant ->
+    variant.outputs.each { output ->
+        def abiName = output.getFilter(com.android.build.OutputFile.ABI)
+        def abiCode = abiCodes.get(abiName)
+        if (abiCode != null) {
+            output.versionCodeOverride = abiCode * 1000 + variant.versionCode
         }
     }
 }
